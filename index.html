@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2d5a3d">
+<title>Mamma Diurna Â· Altieri</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f5f3ee;--surface:#fff;--surface2:#f0ede6;
+  --accent:#2d5a3d;--accent-light:#e8f3ec;
+  --danger:#c0392b;--danger-light:#fdf0ee;
+  --warn:#b45309;--warn-light:#fef3c7;
+  --text:#1a1a1a;--text2:#5a5a5a;--text3:#9a9a9a;
+  --border:rgba(0,0,0,0.08);--radius:16px;--radius-sm:10px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:430px;margin:0 auto;font-size:15px;line-height:1.5}
+
+/* HEADER */
+.header{background:var(--accent);color:white;padding:12px 16px 10px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.header-title{font-size:17px;font-weight:600;letter-spacing:-0.3px}
+.header-sub{font-size:11px;opacity:.7;font-weight:300}
+
+/* DATE PILL + CUSTOM CALENDAR */
+.date-pill-wrap{position:relative}
+.date-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 8px 4px 10px;cursor:pointer;user-select:none;border:none;color:white;font-family:'DM Sans',sans-serif}
+.date-pill:hover{background:rgba(255,255,255,0.25)}
+.date-pill-text{font-family:'DM Mono',monospace;font-size:12px;opacity:.95;white-space:nowrap}
+.date-pill-icon{font-size:13px;opacity:.8}
+
+.dp-popup{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--accent);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.28);z-index:600;padding:14px;width:248px}
+.dp-popup.open{display:block}
+.dp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dp-nav{background:rgba(255,255,255,0.15);border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dp-nav:hover{background:rgba(255,255,255,0.3)}
+.dp-mlabel{font-size:13px;font-weight:600;color:white}
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-dow{font-size:10px;font-weight:600;color:rgba(255,255,255,0.4);text-align:center;padding:2px 0}
+.dp-day{font-size:12px;text-align:center;padding:6px 2px;border-radius:7px;cursor:pointer;color:rgba(255,255,255,0.8);border:none;background:none;width:100%}
+.dp-day:hover:not(.dp-empty){background:rgba(255,255,255,0.2)}
+.dp-day.dp-today{font-weight:700;color:white}
+.dp-day.dp-selected{background:white!important;color:var(--accent)!important;font-weight:700}
+.dp-day.dp-other{color:rgba(255,255,255,0.25)}
+.dp-day.dp-empty{cursor:default;pointer-events:none}
+
+/* TIMEOUT BAR + BANNER */
+.past-banner{display:none;background:var(--warn-light);color:var(--warn);font-size:12px;font-weight:500;text-align:center;padding:5px 12px;border-bottom:1px solid rgba(180,83,9,.2)}
+.past-banner.show{display:block}
+.timeout-bar{display:none;height:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.timeout-bar.show{display:block}
+.timeout-bar-fill{height:100%;background:rgba(255,255,255,.6);width:100%;transition:width 1s linear}
+
+/* NAV */
+.nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:99}
+.nav-btn{flex:1;border:none;background:none;padding:11px 8px 9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-badge{display:inline-block;background:var(--accent);color:white;font-size:10px;font-weight:600;border-radius:10px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+
+.page{display:none;padding:14px}.page.active{display:block}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin:0 4px 10px}
+
+/* STATS */
+.stats-row{display:flex;gap:8px;margin-bottom:14px}
+.stat-pill{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 10px;text-align:center}
+.stat-num{font-size:20px;font-weight:600}.stat-lbl{font-size:11px;color:var(--text3)}
+.stat-num.green{color:var(--accent)}.stat-num.red{color:var(--danger)}
+
+/* CHILD CARDS */
+.child-card{background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:6px;overflow:hidden;cursor:pointer;transition:transform .1s}
+.child-card:active{transform:scale(.99)}
+.child-card.has-entries{border-left:3px solid var(--accent)}
+.child-row{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.child-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.avatar-m{background:#dbeafe;color:#1d4ed8}.avatar-f{background:#fce7f3;color:#be185d}
+.child-row-name{flex:1;font-weight:500;font-size:14px}
+.child-row-hint{display:none}
+.child-log-entries{border-top:1px solid var(--border)}
+.child-log-row{display:flex;align-items:center;gap:10px;padding:7px 14px 7px 60px;border-bottom:1px solid var(--border);font-size:13px}
+.child-log-row.pending{opacity:0.45}
+.child-log-row.pending .log-times::after{content:' â³';font-size:10px}
+.child-log-row:last-child{border-bottom:none}
+.log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--accent)}
+.log-times{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);flex:1}
+.log-extras{font-size:11px;color:var(--text3)}
+.log-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 4px;border-radius:4px;line-height:1}
+.log-del:active{background:var(--danger-light);color:var(--danger)}
+.child-add-turn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--accent);font-weight:500}
+
+/* SYNC PAGE */
+.sync-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:18px;margin-bottom:12px}
+.sync-card h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.sync-card p{font-size:13px;color:var(--text2);margin-bottom:14px}
+.field-row{margin-bottom:12px}
+.field-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px}
+.field-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none}
+.field-input:focus{border-color:var(--accent)}
+.btn-primary{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:disabled{background:#aaa;cursor:default}
+.btn-secondary{width:100%;padding:11px;background:var(--surface2);color:var(--text2);border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px}
+.status-msg{padding:11px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px;display:none}
+.status-msg.show{display:block}
+.status-msg.success{background:var(--accent-light);color:var(--accent);border:1px solid rgba(45,90,61,.2)}
+.status-msg.error{background:var(--danger-light);color:var(--danger);border:1px solid rgba(192,57,43,.2)}
+.status-msg.info{background:#e8f4fd;color:#1a6fa8;border:1px solid rgba(26,111,168,.2)}
+.sync-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:default}
+.sync-item:last-child{border-bottom:none}
+.sync-item.warn{background:var(--danger-light);margin:0 -18px;padding:8px 18px;cursor:pointer}
+.sync-item.warn:active{opacity:.8}
+.sync-result{margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.divider{height:1px;background:var(--border);margin:14px 0}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;animation:slideUp .25s cubic-bezier(.32,.72,0,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0}
+.modal-header{padding:12px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{background:var(--surface2);border:none;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.modal-body{padding:10px 18px 4px}
+.mf-row{display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:6px}
+.mf-row:last-of-type{border-bottom:none}
+.mf-label{flex:1;font-size:15px;color:var(--text)}
+.mf-label.muted{color:var(--text2)}
+.mf-time{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;border:1px solid var(--border);border-radius:8px;padding:5px 10px;background:var(--bg);color:var(--text);width:110px;text-align:center;outline:none}
+.mf-time:focus{border-color:var(--accent)}
+.mf-meal{display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:6px;cursor:pointer}
+.mf-meal:nth-child(odd){padding-right:8px;border-right:1px solid var(--border)}
+.mf-meal:nth-child(even){padding-left:8px}
+.mf-check{width:24px;height:24px;flex-shrink:0;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;background:var(--surface)}
+.mf-check.checked{background:var(--accent);border-color:var(--accent)}
+.mf-check.checked::after{content:'';display:block;width:6px;height:10px;border-right:2px solid white;border-bottom:2px solid white;transform:rotate(45deg) translate(-1px,-1px)}
+.modal-totale{background:var(--surface2);margin:0 -18px;padding:12px 18px;display:flex;align-items:center}
+.modal-footer{display:flex;gap:10px;padding:12px 18px 28px}
+.btn-save{flex:2;padding:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer}
+.btn-save:active{background:#1e3d29}
+.btn-cancel{flex:1;padding:13px;background:var(--danger);color:white;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer}
+.btn-cancel:active{background:#922b21}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:24px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:320px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">Mamma Diurna</div>
+      <div class="header-sub" id="headerSub">Altieri Â· Famiglie Diurne</div>
+    </div>
+    <div class="date-pill-wrap">
+      <button class="date-pill" onclick="toggleCalendar(event)">
+        <span class="date-pill-text" id="headerDate">â</span>
+        <span class="date-pill-icon">â¾</span>
+      </button>
+      <div class="dp-popup" id="dpPopup">
+        <div class="dp-head">
+          <button class="dp-nav" onclick="event.stopPropagation();dpMove(-1)">â¹</button>
+          <div class="dp-mlabel" id="dpLabel">â</div>
+          <button class="dp-nav" onclick="event.stopPropagation();dpMove(1)">âº</button>
+        </div>
+        <div class="dp-grid" id="dpGrid"></div>
+      </div>
+    </div>
+  </div>
+  <div class="timeout-bar" id="timeoutBar"><div class="timeout-bar-fill" id="timeoutFill"></div></div>
+</div>
+<div class="past-banner" id="pastBanner">Stai visualizzando una data passata â tocca la data per tornare ad oggi</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('bambini',this)">Bambini <span class="nav-badge" id="logBadge">0</span></button>
+  <button class="nav-btn" onclick="showPage('sync',this)">Carica</button>
+  <button class="nav-btn" onclick="showPage('settings',this)">â</button>
+</nav>
+
+<div id="page-bambini" class="page active">
+  <div class="stats-row">
+    <div class="stat-pill"><div class="stat-num green" id="statPresenti">0</div><div class="stat-lbl">presenti</div></div>
+    <div class="stat-pill"><div class="stat-num red" id="statTimb">0</div><div class="stat-lbl">timbrature</div></div>
+    <div class="stat-pill"><div class="stat-num" id="statOre">0:00</div><div class="stat-lbl">ore totali</div></div>
+  </div>
+  <div id="childrenList"></div>
+</div>
+
+<div id="page-sync" class="page">
+  <div class="sync-card">
+    <h3>Credenziali portale</h3>
+    <p>Inserisci le credenziali per accedere ad AFDSonline</p>
+    <div class="field-row"><div class="field-label">Username</div><input class="field-input" id="syncUser" type="text" value="l.altieri" autocomplete="username"></div>
+    <div class="field-row"><div class="field-label">Password</div><input class="field-input" id="syncPass" type="password" value="91967" autocomplete="current-password"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+    <div style="flex:1">
+      <div class="field-label">Da</div>
+      <input class="field-input" id="syncDateFrom" type="date">
+    </div>
+    <div style="flex:1">
+      <div class="field-label">A</div>
+      <input class="field-input" id="syncDateTo" type="date">
+    </div>
+  </div>
+  <div class="status-msg" id="syncStatus"></div>
+  <div class="sync-card" id="syncPreview" style="display:none">
+    <h3>Riepilogo da caricare</h3>
+    <p id="syncPreviewText"></p>
+    <div id="syncItemList"></div>
+  </div>
+  <button class="btn-primary" id="btnSync" onclick="startSync()"><span id="btnSyncLabel">Carica sul portale AFDS</span></button>
+  <button class="btn-secondary" onclick="exportCSV()">Esporta CSV (backup)</button>
+  <div class="divider"></div>
+  <div class="section-label">Info sessione</div>
+  <div style="font-size:12px;color:var(--text3);line-height:1.8">
+    <div>API: afdsonline.famigliediurne.ch</div>
+    <div>Firma: AFDS Â· Supervisore: 00000162</div>
+    <div id="sessionInfo">Sessione: non attiva</div>
+  </div>
+</div>
+
+<div id="page-settings" class="page">
+  <div class="sync-card">
+    <h3>Impostazioni</h3>
+    <p>Configura il comportamento dell'applicazione</p>
+    <div class="field-row">
+      <div class="field-label">URL Proxy (es. https://afds-proxy-xxxx.onrender.com)</div>
+      <input class="field-input" id="settingProxy" type="url" placeholder="https://afds-proxy-xxxx.onrender.com" oninput="saveSettings()">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Arrotondamento minuti (soglia)</div>
+      <input class="field-input" id="settingRound" type="number" min="1" max="14" value="6" oninput="saveSettings()">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Timeout rientro a oggi (secondi)</div>
+      <input class="field-input" id="settingTimeout" type="number" min="30" max="3600" value="180" oninput="saveSettings()">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Nome mamma diurna</div>
+      <input class="field-input" id="settingName" type="text" value="Altieri" oninput="saveSettings()">
+    </div>
+  </div>
+  <div class="sync-card">
+    <h3>Sincronizzazione Google Drive</h3>
+    <p>I dati vengono salvati sul tuo Google Drive â accessibili da tutti i tuoi dispositivi.</p>
+    <div id="driveStatus" style="font-size:13px;color:var(--text3);margin-bottom:12px">Non connesso</div>
+    <button class="btn-primary" id="btnDriveLogin" onclick="driveLogin()">Accedi con Google</button>
+    <button class="btn-secondary" id="btnDriveLogout" style="display:none" onclick="driveLogout()">Disconnetti</button>
+    <button class="btn-secondary" id="btnDriveSync" style="display:none" onclick="driveSyncNow()">Sincronizza ora</button>
+    <button class="btn-secondary" id="btnDriveReinit" style="display:none" onclick="sheetsReinit()">Ricrea foglio</button>
+  </div>
+  <div style="font-size:12px;color:var(--text3);padding:0 4px">Dopo il timeout, la data torna automaticamente ad oggi se hai selezionato un giorno passato.</div>
+</div>
+
+<!-- Modal timbratura -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">â</div>
+      <button class="modal-close" onclick="closeModal()">â</button>
+    </div>
+    <div class="modal-body">
+      <div class="mf-row"><div class="mf-label">Ora entrata</div><input class="mf-time" id="mTimeIn" type="time" oninput="onTimeInChange()"></div>
+      <div class="mf-row"><div class="mf-label">Ora uscita</div><input class="mf-time" id="mTimeOut" type="time" oninput="updateTotale()"></div>
+      <div id="mRoundedRow" style="display:none;background:#fffbeb;margin:0 -18px;padding:10px 18px;border-bottom:1px solid rgba(180,83,9,0.15);gap:4px;flex-direction:column">
+        <div style="font-size:13px;font-weight:600;color:var(--warn)" id="mRoundedLine1">â  Arrotondato a 15'</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--warn)" id="mRoundedLine2">â</div>
+      </div>
+      <div class="mf-row" onclick="toggleCheck('mChkPattuite')"><div class="mf-label muted">Pattuite non usufruite</div><div class="mf-check" id="mChkPattuite"></div></div>
+      <div class="mf-row" onclick="toggleCheck('mChkMalattia')"><div class="mf-label muted">Malattia 50%</div><div class="mf-check" id="mChkMalattia"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
+        <div class="mf-meal" onclick="toggleCheck('mChkColazione')"><div class="mf-label muted">Colazione</div><div class="mf-check" id="mChkColazione"></div></div>
+        <div class="mf-meal" onclick="toggleCheck('mChkPranzo')"><div class="mf-label muted">Pranzo</div><div class="mf-check" id="mChkPranzo"></div></div>
+        <div class="mf-meal" onclick="toggleCheck('mChkMerenda')" style="border-bottom:none"><div class="mf-label muted">Merenda</div><div class="mf-check" id="mChkMerenda"></div></div>
+        <div class="mf-meal" onclick="toggleCheck('mChkCena')" style="border-bottom:none"><div class="mf-label muted">Cena</div><div class="mf-check" id="mChkCena"></div></div>
+      </div>
+    </div>
+    <div class="mf-row" style="border-bottom:none">
+      <div class="mf-label" style="font-weight:600">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Totale ore</div>
+      <div class="mf-time" id="mTotale" style="background:var(--surface2);border-color:transparent;color:var(--text2);cursor:default;font-weight:600">â</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Annulla</button>
+      <button class="btn-save" onclick="saveModal()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function getBaseURL(){const s=getSettings();return(s.proxyUrl||'').trim().replace(/\/+$/,'')+'/api'}
+const FIRM_CODE='AFDS',SUPERVISOR='00000162',LANG=1;
+
+const CHILDREN=[
+  {recordcode:'00000706',name:'Dragica',lastname:'Krstic',gender:2,contract:'00030628'},
+  {recordcode:'00000713',name:'Stefan',lastname:'Lazarevic',gender:1,contract:'00030630'},
+  {recordcode:'00001473',name:'Mia',lastname:'Gajovic',gender:2,contract:'00030624'},
+  {recordcode:'00001474',name:'Teodor',lastname:'Gajovic',gender:1,contract:'00030625'},
+  {recordcode:'00001499',name:'Fiamma',lastname:'Antonietti',gender:2,contract:'00030584'},
+  {recordcode:'00001504',name:'AlizÃ©e',lastname:'Comolli',gender:2,contract:'00030622'},
+  {recordcode:'00002369',name:'Tina',lastname:'Djokic',gender:2,contract:'00030623'},
+  {recordcode:'00002492',name:'Dunja',lastname:'Krstic',gender:2,contract:'00030629'},
+  {recordcode:'00003001',name:'Aria',lastname:'Antonietti',gender:2,contract:'00030585'},
+  {recordcode:'00003005',name:'Enea',lastname:'Giobbi',gender:1,contract:'00030626'},
+  {recordcode:'00003006',name:'Emma',lastname:'Giobbi',gender:2,contract:'00030627'},
+  {recordcode:'00003966',name:'Sofia',lastname:'Maddalenda',gender:2,contract:'00030632'},
+  {recordcode:'00004162',name:'Luca',lastname:'Bordeianu',gender:1,contract:'00030586'},
+  {recordcode:'00004704',name:'Nicole',lastname:'Terzaghi',gender:2,contract:'00030635'},
+  {recordcode:'00004793',name:'Romeo',lastname:'Lombardo',gender:1,contract:'00030631'},
+  {recordcode:'00004800',name:'Ethan',lastname:'Pasci',gender:1,contract:'00030633'},
+  {recordcode:'00004801',name:'Ronnie',lastname:'Pasci',gender:1,contract:'00030634'},
+  {recordcode:'00005245',name:'Melania Margharet',lastname:'Palu',gender:2,contract:'00031608'},
+  {recordcode:'00005270',name:'Joshua Mael',lastname:'Morganella',gender:1,contract:'00031893'},
+  {recordcode:'00005544',name:'Lukas',lastname:'Obetta',gender:1,contract:'00036201'},
+];
+
+/* STATE */
+let activeDate=todayStr();
+let allLogs=loadAllLogs();
+let log=allLogs[activeDate]||[];
+let modalChild=null,modalEntryIdx=null;
+let timeoutHandle=null;
+let dpYear=0,dpMonth=0;
+
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function loadAllLogs(){try{return JSON.parse(localStorage.getItem('afds_all_logs')||'{}')}catch(e){return{}}}
+function saveAllLogs(){localStorage.setItem('afds_all_logs',JSON.stringify(allLogs))}
+function getSettings(){try{return JSON.parse(localStorage.getItem('afds_settings')||'{}')}catch(e){return{}}}
+function saveSettings(){
+  const s={timeout:parseInt(document.getElementById('settingTimeout').value)||180,name:document.getElementById('settingName').value||'Altieri',proxyUrl:document.getElementById('settingProxy').value||'',roundThreshold:parseInt(document.getElementById('settingRound').value)||6};
+  localStorage.setItem('afds_settings',JSON.stringify(s));
+  document.getElementById('headerSub').textContent=s.name+' Â· Famiglie Diurne';
+}
+function loadSettings(){
+  const s=getSettings();
+  document.getElementById('settingTimeout').value=s.timeout||180;
+  document.getElementById('settingName').value=s.name||'Altieri';
+  document.getElementById('settingProxy').value=s.proxyUrl||'';
+  document.getElementById('settingRound').value=s.roundThreshold||6;
+  document.getElementById('headerSub').textContent=(s.name||'Altieri')+' Â· Famiglie Diurne';
+}
+function nowHHMM(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
+function toMinutes(hhmm){if(!hhmm)return 0;const[h,m]=hhmm.split(':').map(Number);return h*60+m}
+function minsToHHMM(mins){mins=Math.max(0,Math.min(1439,mins));return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0')}
+function getRoundThreshold(){ return parseInt(getSettings().roundThreshold)||6; }
+function snap15down(m){ return m-(m%15); }
+function snap15up(m){ const r=m%15; return r===0?m:m+(15-r); }
+// Trova la finestra di durata_arrotondata che minimizza errore totale
+// sia entrata che uscita saranno multipli di 15'
+function roundedTimes(tIn, tOut){
+  if(!tIn||!tOut) return {rIn:tIn, rOut:tOut, changed:false};
+  const mIn=toMinutes(tIn), mOut=toMinutes(tOut);
+  const dur=mOut-mIn;
+  if(dur<=0) return {rIn:tIn, rOut:tOut, changed:false};
+  const thresh=getRoundThreshold();
+  const r=dur%15;
+  const roundedDur=r>=thresh ? dur+(15-r) : dur-r;
+  const rd=Math.max(15, roundedDur);
+  // Prova floor e ceil dell'entrata, scegli quello con errore minimo
+  const candidates=[snap15down(mIn), snap15up(mIn)];
+  let best=null, bestErr=Infinity;
+  for(const cIn of candidates){
+    const cOut=cIn+rd;
+    const err=Math.abs(mIn-cIn)+Math.abs(mOut-cOut);
+    if(err<bestErr){bestErr=err; best={cIn,cOut};}
+  }
+  const rIn=minsToHHMM(best.cIn);
+  const rOut=minsToHHMM(best.cOut);
+  const changed=rIn!==tIn||rOut!==tOut;
+  return {rIn, rOut, changed, origDur:dur, roundedDur:rd};
+}
+function getInitials(n,l){return(n[0]+l[0]).toUpperCase()}
+
+/* CUSTOM CALENDAR */
+let _dpTouchX=0, _dpSwipeInit=false;
+function toggleCalendar(e){
+  e.stopPropagation();
+  const pop=document.getElementById('dpPopup');
+  if(pop.classList.contains('open')){pop.classList.remove('open');return}
+  const d=new Date(activeDate+'T12:00:00');
+  dpYear=d.getFullYear();dpMonth=d.getMonth();
+  renderCalendar();
+  pop.classList.add('open');
+  // Init swipe once
+  if(!_dpSwipeInit){
+    _dpSwipeInit=true;
+    pop.addEventListener('touchstart',e=>{_dpTouchX=e.touches[0].clientX;},{passive:true});
+    pop.addEventListener('touchend',e=>{
+      const dx=e.changedTouches[0].clientX-_dpTouchX;
+      if(Math.abs(dx)>40){e.stopPropagation();dpMove(dx<0?1:-1);}
+    },{passive:true});
+  }
+}
+function dpMove(dir){dpMonth+=dir;if(dpMonth<0){dpMonth=11;dpYear--}if(dpMonth>11){dpMonth=0;dpYear++}renderCalendar()}
+function renderCalendar(){
+  const DAYS=['Lu','Ma','Me','Gi','Ve','Sa','Do'];
+  const MONTHS=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  document.getElementById('dpLabel').textContent=MONTHS[dpMonth]+' '+dpYear;
+  const grid=document.getElementById('dpGrid');
+  let html=DAYS.map(d=>`<div class="dp-dow">${d}</div>`).join('');
+  const first=new Date(dpYear,dpMonth,1).getDay();// 0=Sun
+  const start=first===0?6:first-1;// Mon=0
+  const daysInMonth=new Date(dpYear,dpMonth+1,0).getDate();
+  const today=todayStr();
+  for(let i=0;i<start;i++) html+=`<div class="dp-day dp-empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=dpYear+'-'+String(dpMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const cls=(ds===today?'dp-today':'')+(ds===activeDate?' dp-selected':'');
+    html+=`<button class="dp-day ${cls}" onclick="event.stopPropagation();selectDate('${ds}')">${d}</button>`;
+  }
+  grid.innerHTML=html;
+}
+function selectDate(val){
+  document.getElementById('dpPopup').classList.remove('open');
+  if(val===activeDate)return;
+  activeDate=val;
+  log=allLogs[activeDate]||[];
+  updateDateDisplay();
+  renderChildren();
+  updateStats();
+  buildSyncPreview();
+  if(activeDate!==todayStr())startTimeoutCountdown();
+  else stopTimeoutCountdown();
+}
+// Close calendar on outside click
+document.addEventListener('click',()=>document.getElementById('dpPopup').classList.remove('open'));
+
+/* DATE DISPLAY */
+function updateDateDisplay(){
+  const isToday=activeDate===todayStr();
+  const d=new Date(activeDate+'T12:00:00');
+  document.getElementById('headerDate').textContent=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('pastBanner').classList.toggle('show',!isToday);
+}
+function returnToToday(){
+  stopTimeoutCountdown();
+  activeDate=todayStr();
+  log=allLogs[activeDate]||[];
+  updateDateDisplay();renderChildren();updateStats();
+  showToast('Tornato alla data di oggi');
+}
+
+/* TIMEOUT */
+function startTimeoutCountdown(){
+  stopTimeoutCountdown();
+  const secs=getSettings().timeout||180;
+  const bar=document.getElementById('timeoutBar'),fill=document.getElementById('timeoutFill');
+  bar.classList.add('show');
+  fill.style.transition='none';fill.style.width='100%';
+  requestAnimationFrame(()=>{fill.style.transition=`width ${secs}s linear`;fill.style.width='0%'});
+  timeoutHandle=setTimeout(returnToToday,secs*1000);
+}
+function stopTimeoutCountdown(){
+  if(timeoutHandle){clearTimeout(timeoutHandle);timeoutHandle=null}
+  document.getElementById('timeoutBar').classList.remove('show');
+}
+function resetInactivityTimer(){if(activeDate!==todayStr())startTimeoutCountdown()}
+['touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(activeDate!==todayStr())resetInactivityTimer()},{passive:true}));
+
+/* LOG */
+function getEntriesForChild(rc){return log.filter(e=>e.recordcode===rc)}
+function saveLog(){allLogs[activeDate]=log;saveAllLogs()}
+
+/* MODAL */
+function openModal(rc,entryIdx){
+  resetInactivityTimer();
+  modalChild=CHILDREN.find(c=>c.recordcode===rc);
+  if(!modalChild)return;
+  modalEntryIdx=(entryIdx!==undefined)?entryIdx:null;
+  document.getElementById('modalTitle').textContent=modalChild.lastname+' '+modalChild.name;
+  const now=nowHHMM();
+  const ex=(modalEntryIdx!==null)?log[modalEntryIdx]:null;
+  if(ex){
+    document.getElementById('mTimeIn').value=ex.timeIn||'';
+    document.getElementById('mTimeOut').value=ex.timeOut||(ex.timeIn?now:'');
+    ['Pattuite','Malattia','Colazione','Pranzo','Merenda','Cena'].forEach(k=>document.getElementById('mChk'+k).classList.toggle('checked',!!ex['chk'+k]));
+  }else{
+    document.getElementById('mTimeIn').value=now;
+    document.getElementById('mTimeOut').value='';
+    ['Pattuite','Malattia','Colazione','Pranzo','Merenda','Cena'].forEach(k=>document.getElementById('mChk'+k).classList.remove('checked'));
+  }
+  updateTotale();
+  updateRounding();
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';modalChild=null;modalEntryIdx=null}
+function handleOverlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal()}
+function toggleCheck(id){document.getElementById(id).classList.toggle('checked')}
+function onTimeInChange(){
+  const tIn=document.getElementById('mTimeIn').value,tOut=document.getElementById('mTimeOut').value;
+  if(tIn&&!tOut)document.getElementById('mTimeOut').value=nowHHMM();
+  updateTotale();
+  updateRounding();
+}
+function updateTotale(){
+  const tIn=document.getElementById('mTimeIn').value,tOut=document.getElementById('mTimeOut').value,el=document.getElementById('mTotale');
+  if(tIn&&tOut){
+    const {roundedDur,changed}=roundedTimes(tIn,tOut);
+    const diff=changed?roundedDur:toMinutes(tOut)-toMinutes(tIn);
+    if(diff>0){el.textContent=String(Math.floor(diff/60)).padStart(2,'0')+':'+String(diff%60).padStart(2,'0');el.style.color='var(--accent)'}
+    else{el.textContent='-';el.style.color='var(--danger)'}
+  }else{el.textContent='-';el.style.color='var(--text2)'}
+  updateRounding();
+}
+function updateRounding(){
+  const tIn=document.getElementById('mTimeIn').value;
+  const tOut=document.getElementById('mTimeOut').value;
+  const row=document.getElementById('mRoundedRow');
+  const txt=document.getElementById('mRoundedText');
+  if(!tIn||!tOut){row.style.display='none';return;}
+  const {rIn,rOut,changed,origDur,roundedDur}=roundedTimes(tIn,tOut);
+  if(changed){
+    const fmt=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+    document.getElementById('mRoundedLine1').textContent='\u26A0 Arrotondato a 15\' - Durata '+fmt(origDur)+' -> '+fmt(roundedDur);
+    const parts=[];
+    if(rIn!==tIn) parts.push('Entrata '+tIn+' > '+rIn);
+    if(rOut!==tOut) parts.push('Uscita '+tOut+' > '+rOut);
+    document.getElementById('mRoundedLine2').textContent=parts.join(' Â· ');
+    row.style.display='flex';
+  }else{
+    row.style.display='none';
+  }
+}
+function saveModal(){
+  if(!modalChild)return;
+  const rawIn=document.getElementById('mTimeIn').value;
+  const rawOut=document.getElementById('mTimeOut').value;
+  const {rIn:timeIn, rOut:timeOut}=roundedTimes(rawIn,rawOut);
+  if(!timeIn&&!timeOut&&!document.getElementById('mChkColazione').classList.contains('checked')
+    &&!document.getElementById('mChkPranzo').classList.contains('checked')
+    &&!document.getElementById('mChkMerenda').classList.contains('checked')
+    &&!document.getElementById('mChkCena').classList.contains('checked')){
+    showToast("Inserisci almeno un orario o un pasto");return;
+  }
+  const entry={recordcode:modalChild.recordcode,ts:new Date().toISOString(),timeIn,timeOut,
+    chkPattuite:document.getElementById('mChkPattuite').classList.contains('checked'),
+    chkMalattia:document.getElementById('mChkMalattia').classList.contains('checked'),
+    chkColazione:document.getElementById('mChkColazione').classList.contains('checked'),
+    chkPranzo:document.getElementById('mChkPranzo').classList.contains('checked'),
+    chkMerenda:document.getElementById('mChkMerenda').classList.contains('checked'),
+    chkCena:document.getElementById('mChkCena').classList.contains('checked'),
+    synced:false};
+  if(modalEntryIdx!==null)log[modalEntryIdx]=entry;else log.push(entry);
+  saveLog();closeModal();renderChildren();updateStats();
+  showToast('â '+modalChild.name+' salvato');
+}
+
+/* RENDER */
+function renderChildren(){
+  const list=document.getElementById('childrenList');
+  const sorted=[...CHILDREN].sort((a,b)=>{
+    const eA=getEntriesForChild(a.recordcode);
+    const eB=getEntriesForChild(b.recordcode);
+    const tA=eA.length?toMinutes(eA[0].timeIn||'99:99'):9999;
+    const tB=eB.length?toMinutes(eB[0].timeIn||'99:99'):9999;
+    if(tA!==tB) return tA-tB;
+    return a.lastname.localeCompare(b.lastname);
+  });
+  list.innerHTML=sorted.map(c=>{
+    const entries=getEntriesForChild(c.recordcode);
+    const initials=getInitials(c.name,c.lastname);
+    const avatarClass=c.gender===1?'avatar-m':'avatar-f';
+    const has=entries.length>0;
+    let logRows='';
+    entries.forEach(e=>{
+      const ri=log.indexOf(e);
+      const times=[e.timeIn,e.timeOut].filter(Boolean).join(' -> ');
+      const extras=['Pattuite','Malattia','Colazione','Pranzo','Merenda','Cena'].filter(k=>e['chk'+k]).join(', ');
+      logRows+=`<div class="child-log-row${e.synced===false?' pending':''}" onclick="event.stopPropagation();openModal('${c.recordcode}',${ri})">
+        <div class="log-dot"></div>
+        <div class="log-times">${times}</div>
+        <div class="log-extras">${extras}</div>
+        <button class="log-del" onclick="event.stopPropagation();deleteEntry(${ri})">Ã</button>
+      </div>`;
+    });
+    const addBtn=has?`<div class="child-add-turn" onclick="event.stopPropagation();openModal('${c.recordcode}')">+ Aggiungi turno</div>`:'';
+    return `<div class="child-card ${has?'has-entries':''}" onclick="openModal('${c.recordcode}')">
+      <div class="child-row">
+        <div class="child-avatar ${avatarClass}">${initials}</div>
+        <div class="child-row-name">${c.lastname} ${c.name}</div>
+        <div class="child-row-hint">${has?'':'tocca per timbrare'}</div>
+      </div>
+      ${has?`<div class="child-log-entries">${logRows}</div>${addBtn}`:''}
+    </div>`;
+  }).join('');
+}
+function updateStats(){
+  const present=log.filter(e=>e.timeIn&&!e.timeOut).length;
+  document.getElementById('statPresenti').textContent=present;
+  document.getElementById('statTimb').textContent=log.length;
+  document.getElementById('logBadge').textContent=log.length;
+  let totalMins=0;
+  log.forEach(e=>{
+    if(e.timeIn&&e.timeOut){
+      const diff=toMinutes(e.timeOut)-toMinutes(e.timeIn);
+      if(diff>0) totalMins+=diff;
+    }
+  });
+  const h=Math.floor(totalMins/60),m=totalMins%60;
+  const el=document.getElementById('statOre');
+  if(el) el.textContent=h+':'+String(m).padStart(2,'0');
+}
+function deleteEntry(idx){
+  resetInactivityTimer();
+  log.splice(idx,1);
+  allLogs[activeDate]=log;
+  saveAllLogs();
+  if(_gToken&&navigator.onLine) sheetsSave();
+  renderChildren();updateStats();
+  showToast('Timbratura eliminata');
+}
+
+function goToChildModal(recordcode){
+  // Switch to bambini tab and open modal
+  const btn=document.querySelectorAll('.nav-btn')[0];
+  showPage('bambini',btn);
+  setTimeout(()=>openModal(recordcode),100);
+}
+
+function showPage(name,btn){
+  resetInactivityTimer();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(name==='sync'){buildSyncPreview()}
+}
+function buildSyncPreview(){
+  const all=[];
+  Object.keys(allLogs).forEach(date=>{(allLogs[date]||[]).filter(e=>!e.synced).forEach(e=>all.push({...e,date}))});
+  const preview=document.getElementById('syncPreview');
+  if(all.length===0){preview.style.display='none';return}
+  preview.style.display='block';
+  document.getElementById('syncPreviewText').textContent=all.length+' presenze da caricare';
+  document.getElementById('syncItemList').innerHTML=all.map(e=>{
+    const child=CHILDREN.find(c=>c.recordcode===e.recordcode);
+    const name=child?child.lastname+' '+child.name:e.recordcode;
+    const times=[e.timeIn,e.timeOut].filter(Boolean).join(' -> ');
+    const missingOre=!(e.timeIn&&e.timeOut);
+    const hasPasti=e.chkColazione||e.chkPranzo||e.chkMerenda||e.chkCena;
+    const isWarn=missingOre&&!hasPasti;
+    const warnClass=isWarn?'warn':'';
+    const warnIcon=isWarn?'â  ':missingOre?'â± ':'';
+    const onclick=isWarn?`onclick="goToChildModal('${e.recordcode}')"`:'';
+    return `<div class="sync-item ${warnClass}" ${onclick}>
+      <div style="flex:1">${warnIcon}${name}</div>
+      <div style="font-size:11px;color:var(--text3);margin-right:8px">${e.date}</div>
+      <div class="sync-result">${times||'-'}</div>
+    </div>`;
+  }).join('');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+/* API */
+async function apiCall(ep,payload){
+  const base=getBaseURL();if(!base||base==='/api'){throw new Error('URL proxy non configurato - vai su Impostazioni')}
+  const withSession=(_session&&payload.session==='')?{...payload,session:_session}:payload;
+  const body=_accessToken?{...withSession,__auth:'Bearer '+_accessToken}:withSession;
+  const r=await fetch(`${base}/${ep}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('HTTP '+r.status);return await r.json();
+}
+let _accessToken = '';
+let _session = '';
+async function doLogin(u,p){
+  const d=await apiCall('WebLoginJwt',{username:u,password:p});
+  const session=(d.userSession&&d.userSession.session)||d.session;
+  if(!session)throw new Error('Login fallito - risposta: '+JSON.stringify(d).slice(0,200));
+  _accessToken=(d.accessToken&&d.accessToken.tokenValue)||(d.accessToken&&d.accessToken.token)||'';
+  return session;
+}
+// Cache codici servizio per contratto - popolata dinamicamente
+const _svcCache = {}; // contractCode -> { ore, pattuite, malattia, colazione, pranzo, merenda, cena }
+
+// Mappa i codici servizio per tipo cercando per codice (es. 01MD, 01MDA...)
+function mapServices(serviceList) {
+  const m = {};
+  for (const s of serviceList) {
+    const cod = (s.service && s.service.code || '').toUpperCase();
+    const rc = s.itemServiceRecordcode;
+    if (cod === '01MDA')     m.pattuite  = rc;
+    else if (cod === '01MDM') m.malattia  = rc;
+    else if (cod === '01MD')  m.ore       = rc;
+    else if (cod === '1COL')  m.colazione = rc;
+    else if (cod === '2PRA')  m.pranzo    = rc;
+    else if (cod === '3MER')  m.merenda   = rc;
+    else if (cod === '4CEN')  m.cena      = rc;
+  }
+  return m;
+}
+
+async function getSvc(session, username, contractCode) {
+  if (_svcCache[contractCode]) return _svcCache[contractCode];
+  const d = await apiCall('GetCareItemServices', {
+    firmCode: FIRM_CODE, language: LANG,
+    getCareItemServicesFilterType: 1,
+    contractRecordcode: contractCode,
+    date: new Date().toISOString().slice(0,10) + 'T00:00:00.000Z'
+  });
+  const list = d.serviceList || d.itemServiceList || [];
+  const m = mapServices(list);
+  _svcCache[contractCode] = m;
+  return m;
+}
+async function startSync(){
+  const username=document.getElementById('syncUser').value.trim(),password=document.getElementById('syncPass').value.trim();
+  const btn=document.getElementById('btnSync'),label=document.getElementById('btnSyncLabel');
+  if(!username||!password){showStatus('error','Inserisci username e password');return}
+  const dateFrom = document.getElementById('syncDateFrom').value;
+  const dateTo = document.getElementById('syncDateTo').value;
+  const unsync=[];
+  Object.keys(allLogs).forEach(date=>{
+    if(dateFrom && date < dateFrom) return;
+    if(dateTo && date > dateTo) return;
+    (allLogs[date]||[]).forEach((e,i)=>{if(!e.synced)unsync.push({entry:e,date,idx:i})});
+  });
+  if(unsync.length===0){showStatus('info','Nessuna presenza da caricare.');return}
+  btn.disabled=true;label.innerHTML='<span class="spinner"></span> Connessione...';
+  const base=getBaseURL();
+  showStatus('info','Connessione a: '+base+' ...');
+  // Reset token e cache ad ogni sync - evita problemi di scadenza JWT (1h)
+  _accessToken='';_session='';
+  Object.keys(_svcCache).forEach(k=>delete _svcCache[k]);
+  try{
+    const session=await doLogin(username,password);
+    document.getElementById('sessionInfo').textContent='Sessione: attiva â';
+    showStatus('info','Caricamento '+unsync.length+' presenze...');
+    let ok=0,errors=[];
+    for(let i=0;i<unsync.length;i++){
+      const{entry,date,idx}=unsync[i];
+      const child=CHILDREN.find(c=>c.recordcode===entry.recordcode);
+      if(!child)continue;
+      label.innerHTML=`<span class="spinner"></span> Caricamento (${i+1}/${unsync.length})...`;
+      try{
+        const registerDate=new Date(date+'T00:00:00.000Z').toISOString();
+        const hasOre=!!(entry.timeIn&&entry.timeOut);
+        const timeFrom=hasOre?toMinutes(entry.timeIn):0;
+        const timeTo=hasOre?toMinutes(entry.timeOut):0;
+        const hasPasti=entry.chkColazione||entry.chkPranzo||entry.chkMerenda||entry.chkCena;
+
+        // Salta se non c'Ã¨ nulla da caricare
+        if(!hasOre&&!hasPasti){ errors.push(child.name+': nessun orario nÃ© pasto'); continue; }
+
+        const base={recordcode:'',itemRecordcode:child.contract,appCode:1,correction:false,
+          description1:'',description2:'',firmCode:FIRM_CODE,language:LANG,notes:'',
+          registerDate,session,subjectPercent:100,timeFrom,timeTo,username,value:0,valueType:1};
+
+        // Carica codici servizio specifici per questo contratto
+        const svc = await getSvc(session, username, child.contract);
+        if(!svc.ore) throw new Error('Codici servizio non trovati per '+child.name);
+
+        // Record ore - solo se entrambi gli orari presenti
+        if(hasOre){
+          const svcOre=entry.chkPattuite?svc.pattuite:entry.chkMalattia?svc.malattia:svc.ore;
+          const subjectPercent=entry.chkMalattia?50:100;
+          await apiCall('UpdateCareRegisterData',{...base,itemServiceRecordcode:svcOre,status:2,subjectPercent});
+        }
+
+        // Pasti selezionati - record separati con value:1, timeFrom:0, timeTo:0
+        const pastiBase={...base,timeFrom:0,timeTo:0,value:1};
+        const pasti=[
+          {chk:entry.chkColazione,svc:svc.colazione},
+          {chk:entry.chkPranzo,   svc:svc.pranzo},
+          {chk:entry.chkMerenda,  svc:svc.merenda},
+          {chk:entry.chkCena,     svc:svc.cena},
+        ];
+        for(const p of pasti){
+          if(p.chk&&p.svc) await apiCall('UpdateCareRegisterData',{...pastiBase,itemServiceRecordcode:p.svc,status:2,subjectPercent:100});
+        }
+
+        allLogs[date][idx].synced=true;ok++;
+      }catch(e){errors.push((child?child.name:entry.recordcode)+': '+e.message)}
+    }
+    saveAllLogs();renderChildren();updateStats();buildSyncPreview();
+    if(errors.length===0)showStatus('success','â '+ok+' presenza/e caricate!');
+    else showStatus('error',ok+' ok, '+errors.length+' errori: '+errors.join(' | '));
+  }catch(e){showStatus('error','Errore: '+e.message)}
+  btn.disabled=false;label.textContent='Carica sul portale AFDS';
+}
+function showStatus(type,msg){const el=document.getElementById('syncStatus');el.className='status-msg show '+type;el.textContent=msg}
+function exportCSV(){
+  const lines=['Data,Cognome,Nome,Entrata,Uscita,Pattuite,Malattia,Colazione,Pranzo,Merenda,Cena,Sincronizzato'];
+  Object.keys(allLogs).sort().forEach(date=>{
+    (allLogs[date]||[]).forEach(e=>{
+      const c=CHILDREN.find(x=>x.recordcode===e.recordcode);
+      lines.push([date,c?c.lastname:'',c?c.name:e.recordcode,e.timeIn||'',e.timeOut||'',
+        e.chkPattuite?'Si':'',e.chkMalattia?'Si':'',e.chkColazione?'Si':'',
+        e.chkPranzo?'Si':'',e.chkMerenda?'Si':'',e.chkCena?'Si':'',e.synced?'Si':'No'].join(','));
+    });
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'}));
+  a.download='presenze_'+activeDate+'.csv';a.click();showToast('CSV esportato');
+}
+
+/* GOOGLE SHEETS SYNC â PKCE flow */
+const G_CLIENT_ID = '532821945699-od1p552eth41rccaf8urnlcp4ie2te10.apps.googleusercontent.com';
+const G_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const G_REDIRECT = 'https://gianugo-altieri.github.io/mamma-diurna/';
+let _gToken = null;
+let _gRefresh = null;
+let _gSheetId = null;
+
+// PKCE helpers
+async function pkceChallenge() {
+  const verifier = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  return { verifier, challenge };
+}
+
+async function driveLogin() {
+  const { verifier, challenge } = await pkceChallenge();
+  localStorage.setItem('pkce_verifier', verifier);
+  const params = new URLSearchParams({
+    client_id: G_CLIENT_ID,
+    redirect_uri: G_REDIRECT,
+    response_type: 'code',
+    scope: G_SCOPE,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    access_type: 'offline',
+    prompt: 'consent'
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+async function handleOAuthRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  // Pulisci subito l'URL dai parametri OAuth â non aspettare
+  if (code || params.get('iss')) {
+    history.replaceState(null, '', window.location.pathname);
+  }
+  if (!code) {
+    // Try to restore saved token
+    const saved = localStorage.getItem('g_token');
+    const sheetId = localStorage.getItem('g_sheet_id');
+    if (saved) {
+      _gToken = saved;
+      _gSheetId = sheetId || null;
+      updateDriveUI(true);
+      sheetsInit();
+    }
+    return;
+  }
+  // Exchange code for token via worker
+  history.replaceState(null, '', G_REDIRECT);
+  const verifier = localStorage.getItem('pkce_verifier');
+  localStorage.removeItem('pkce_verifier');
+  const s = getSettings();
+  const proxyBase = (s.proxyUrl||'').trim().replace(/\/+$/,'');
+  console.log('Token exchange â proxyBase:', proxyBase, 'verifier:', verifier ? verifier.slice(0,10)+'...' : 'NULL');
+  const base = proxyBase;
+  try {
+    const resp = await fetch(base + '/auth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, code_verifier: verifier })
+    });
+    console.log('Token exchange â HTTP status:', resp.status);
+    const data = await resp.json();
+    console.log('Token exchange â response keys:', Object.keys(data), 'error:', data.error, 'error_description:', data.error_description);
+    if (data.access_token) {
+      _gToken = data.access_token;
+      _gRefresh = data.refresh_token;
+      localStorage.setItem('g_token', _gToken);
+      if (_gRefresh) localStorage.setItem('g_refresh', _gRefresh);
+      updateDriveUI(true);
+      showToast('Connesso a Google');
+      await sheetsInit();
+    } else {
+      showToast('Errore login: ' + (data.error||'') + ' ' + (data.error_description||''));
+    }
+  } catch(e) {
+    console.error('Token exchange exception:', e);
+    showToast('Errore connessione: ' + e.message);
+  }
+}
+
+function driveLogout() {
+  // Pulisce tutto tranne impostazioni
+  const settings = localStorage.getItem('afds_settings');
+  localStorage.clear();
+  sessionStorage.clear();
+  if (settings) localStorage.setItem('afds_settings', settings);
+  // Redirect con flag logout â impedisce il ripristino del token
+  window.location.href = window.location.pathname + '?logout=1';
+}
+// Forza ricerca/creazione foglio
+async function sheetsReinit() {
+  _gSheetId = null;
+  localStorage.removeItem('g_sheet_id');
+  showToast('Ricreazione foglio...');
+  await sheetsInit();
+}
+
+function updateDriveUI(connected) {
+  const status = document.getElementById('driveStatus');
+  const btnLogin = document.getElementById('btnDriveLogin');
+  const btnLogout = document.getElementById('btnDriveLogout');
+  const btnSync = document.getElementById('btnDriveSync');
+  if (!status) return;
+  if (connected) {
+    status.textContent = 'Connesso a Google Sheets';
+    status.style.color = 'var(--accent)';
+    btnLogin.style.display = 'none';
+    btnLogout.style.display = 'block';
+    btnSync.style.display = 'block';
+    const btnReinit = document.getElementById('btnDriveReinit');
+    if (btnReinit) btnReinit.style.display = 'block';
+  } else {
+    status.textContent = 'Non connesso';
+    status.style.color = 'var(--text3)';
+    btnLogin.style.display = 'block';
+    btnLogout.style.display = 'none';
+    btnSync.style.display = 'none';
+    const btnReinit2 = document.getElementById('btnDriveReinit');
+    if (btnReinit2) btnReinit2.style.display = 'none';
+  }
+}
+
+async function gFetch(url, opts={}) {
+  if (!_gToken) return null;
+  const resp = await fetch(url, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + _gToken, ...(opts.headers||{}) }
+  });
+  if (resp.status === 401) { driveLogout(); return null; }
+  return resp;
+}
+
+async function sheetsInit() {
+  // Cerca foglio esistente o ne crea uno nuovo
+  const name = 'Mamma Diurna - Timbrature';
+  // Cerca
+  const search = await gFetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${name}' and mimeType='application/vnd.google-apps.spreadsheet'&fields=files(id,name)`
+  );
+  if (!search) return;
+  const data = await search.json();
+  if (data.files && data.files.length > 0) {
+    _gSheetId = data.files[0].id;
+  } else {
+    // Crea nuovo foglio
+    const create = await gFetch('https://sheets.googleapis.com/v4/spreadsheets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        properties: { title: name },
+        sheets: [{ properties: { title: 'Timbrature' } }]
+      })
+    });
+    if (!create) return;
+    const sheet = await create.json();
+    _gSheetId = sheet.spreadsheetId;
+    // Intestazioni
+    await sheetsWrite([['Data','Bambino','Entrata','Uscita','Malattia 50%','Pattuite non usufruite','Colazione','Pranzo','Merenda','Cena','Sincronizzato']]);
+  }
+  localStorage.setItem('g_sheet_id', _gSheetId);
+  showToast('Foglio creato: ' + _gSheetId.slice(0,8) + '...');
+  await sheetsLoad();
+}
+
+async function sheetsWrite(rows, append=true) {
+  if (!_gSheetId) return;
+  const url = append
+    ? `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:I1000:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`
+    : `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:I1000?valueInputOption=RAW`;
+  const method = append ? 'POST' : 'PUT';
+  await gFetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values: rows })
+  });
+}
+
+async function sheetsLoad() {
+  if (!_gSheetId) return;
+  const resp = await gFetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A2:K1000`
+  );
+  if (!resp) return;
+  const data = await resp.json();
+  const rows = data.values || [];
+
+  // Ricostruisci allLogs dal foglio â il foglio comanda
+  const fromSheet = {};
+  rows.forEach(r => {
+    const [date,nome,tIn,tOut,mal,pat,col,pra,mer,cen,updatedAt] = r;
+    if (!date || !nome) return;
+    const child = CHILDREN.find(c => (c.lastname+' '+c.name) === nome);
+    if (!child) return;
+    if (!fromSheet[date]) fromSheet[date] = [];
+    fromSheet[date].push({
+      recordcode: child.recordcode,
+      ts: updatedAt || (date+'T'+(tIn||'00:00')+':00'),
+      updatedAt: updatedAt || '',
+      timeIn: tIn||'', timeOut: tOut||'',
+      chkMalattia: mal==='Si', chkPattuite: pat==='Si',
+      chkColazione: col==='Si', chkPranzo: pra==='Si',
+      chkMerenda: mer==='Si', chkCena: cen==='Si',
+      synced: true
+    });
+  });
+
+  // Bootstrap: se foglio vuoto e ci sono dati locali, scrivi locali sul foglio
+  const sheetIsEmpty = Object.keys(fromSheet).length === 0;
+  const hasLocalData = Object.values(allLogs).some(d => d.length > 0);
+  if (sheetIsEmpty && hasLocalData) {
+    console.log('Bootstrap: scrivo dati locali sul foglio');
+    await sheetsSave();
+    // Marca tutto come synced
+    Object.values(allLogs).forEach(entries =>
+      entries.forEach(e => { e.synced = true; })
+    );
+    saveAllLogs();
+    log = allLogs[activeDate] || [];
+    renderChildren(); updateStats();
+    return;
+  }
+
+  // Foglio ha dati â sostituisce tutto il locale (foglio comanda)
+  // Ma mantieni le timbrature pending (synced:false) dal locale
+  const pending = [];
+  Object.keys(allLogs).forEach(date => {
+    (allLogs[date]||[]).forEach(e => {
+      if (!e.synced) pending.push({...e, date});
+    });
+  });
+
+  // Parti dal foglio
+  allLogs = fromSheet;
+
+  // Re-aggiungi pending che non sono giÃ  sul foglio (dedup per data+bambino+entrata)
+  pending.forEach(p => {
+    const dayRows = allLogs[p.date] || [];
+    const exists = dayRows.some(r =>
+      r.recordcode === p.recordcode && r.timeIn === p.timeIn
+    );
+    if (!exists) {
+      if (!allLogs[p.date]) allLogs[p.date] = [];
+      allLogs[p.date].push(p);
+    }
+  });
+
+  saveAllLogs();
+  log = allLogs[activeDate] || [];
+  renderChildren(); updateStats();
+}
+
+async function sheetsSave() {
+  if (!_gSheetId || !_gToken) return;
+  const now = new Date().toISOString();
+  const rows = [['Data','Bambino','Entrata','Uscita','Malattia 50%','Pattuite non usufruite','Colazione','Pranzo','Merenda','Cena','Aggiornato']];
+  const allRows = [];
+  Object.keys(allLogs).sort().forEach(date => {
+    (allLogs[date]||[]).forEach(e => {
+      if (!e.synced) return; // Non scrivere pending â restano grigi finchÃ© offline
+      const child = CHILDREN.find(c => c.recordcode === e.recordcode);
+      const nome = child ? child.lastname+' '+child.name : e.recordcode;
+      allRows.push({ date, timeIn: e.timeIn||'', row: [
+        date, nome, e.timeIn||'', e.timeOut||'',
+        e.chkMalattia?'Si':'', e.chkPattuite?'Si':'',
+        e.chkColazione?'Si':'', e.chkPranzo?'Si':'',
+        e.chkMerenda?'Si':'', e.chkCena?'Si':'',
+        e.updatedAt || now
+      ]});
+    });
+  });
+  allRows.sort((a,b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return (a.timeIn||'').localeCompare(b.timeIn||'');
+  });
+  allRows.forEach(r => rows.push(r.row));
+  // Prima svuota tutto il foglio (fino a riga 1000), poi riscrivi
+  await gFetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:K1000:clear`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+  );
+  await gFetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:K${rows.length}?valueInputOption=RAW`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: rows })
+    }
+  );
+}
+
+async function driveSyncNow() {
+  showToast('Sincronizzazione...');
+  if (!_gSheetId) {
+    await sheetsInit();
+  } else {
+    await sheetsLoad();
+  }
+  showToast('Sincronizzato con Google Sheets');
+}
+
+function driveLogout() {
+  _gToken = null;
+  
+  updateDriveUI(false);
+}
+
+function updateDriveUI(connected) {
+  const status = document.getElementById('driveStatus');
+  const btnLogin = document.getElementById('btnDriveLogin');
+  const btnLogout = document.getElementById('btnDriveLogout');
+  const btnSync = document.getElementById('btnDriveSync');
+  if (!status) return;
+  if (connected) {
+    status.textContent = 'Connesso â â dati sincronizzati su Drive';
+    status.style.color = 'var(--accent)';
+    btnLogin.style.display = 'none';
+    btnLogout.style.display = 'block';
+    btnSync.style.display = 'block';
+    const btnReinit = document.getElementById('btnDriveReinit');
+    if (btnReinit) btnReinit.style.display = 'block';
+  } else {
+    status.textContent = 'Non connesso';
+    status.style.color = 'var(--text3)';
+    btnLogin.style.display = 'block';
+    btnLogout.style.display = 'none';
+    btnSync.style.display = 'none';
+    const btnReinit2 = document.getElementById('btnDriveReinit');
+    if (btnReinit2) btnReinit2.style.display = 'none';
+  }
+}
+
+async function driveFetch(url, opts={}) {
+  if (!_gToken) return null;
+  const resp = await fetch(url, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + _gToken, ...(opts.headers||{}) }
+  });
+  if (resp.status === 401) { driveLogout(); return null; }
+  return resp;
+}
+
+async function driveSyncNow() {
+  showToast('Sincronizzazione...');
+  if (!_gSheetId) {
+    await sheetsInit();
+  } else {
+    await sheetsLoad();
+  }
+  showToast('Sincronizzato con Google Sheets');
+}
+
+function driveLogout() {
+  _gToken = null;
+  
+  updateDriveUI(false);
+}
+
+function updateDriveUI(connected) {
+  const status = document.getElementById('driveStatus');
+  const btnLogin = document.getElementById('btnDriveLogin');
+  const btnLogout = document.getElementById('btnDriveLogout');
+  const btnSync = document.getElementById('btnDriveSync');
+  if (!status) return;
+  if (connected) {
+    status.textContent = 'Connesso â â dati sincronizzati su Drive';
+    status.style.color = 'var(--accent)';
+    btnLogin.style.display = 'none';
+    btnLogout.style.display = 'block';
+    btnSync.style.display = 'block';
+    const btnReinit = document.getElementById('btnDriveReinit');
+    if (btnReinit) btnReinit.style.display = 'block';
+  } else {
+    status.textContent = 'Non connesso';
+    status.style.color = 'var(--text3)';
+    btnLogin.style.display = 'block';
+    btnLogout.style.display = 'none';
+    btnSync.style.display = 'none';
+    const btnReinit2 = document.getElementById('btnDriveReinit');
+    if (btnReinit2) btnReinit2.style.display = 'none';
+  }
+}
+
+async function driveFetch(url, opts={}) {
+  if (!_gToken) return null;
+  const resp = await fetch(url, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + _gToken, ...(opts.headers||{}) }
+  });
+  if (resp.status === 401) { driveLogout(); return null; }
+  return resp;
+}
+
+
+// Hook: saveLog â Sheets comanda, localStorage Ã¨ cache offline
+function saveLog() {
+  allLogs[activeDate] = log;
+  saveAllLogs();
+  if (_gToken && navigator.onLine) {
+    // Marca tutto il giorno come synced prima di scrivere
+    (allLogs[activeDate]||[]).forEach(e => {
+      e.synced = true;
+      e.updatedAt = new Date().toISOString();
+    });
+    saveAllLogs();
+    sheetsSave();
+  }
+  // Se offline, le timbrature restano synced:false (grigie)
+  renderChildren(); // aggiorna colori
+}
+
+// Quando torna online, scrivi le pending sul foglio
+window.addEventListener('online', async () => {
+  if (!_gToken || !_gSheetId) return;
+  const pending = [];
+  Object.keys(allLogs).forEach(date => {
+    (allLogs[date]||[]).forEach(e => { if (!e.synced) pending.push({e, date}); });
+  });
+  if (pending.length === 0) return;
+  showToast('Connesso â carico ' + pending.length + ' timbrature in sospeso...');
+  // Carica foglio corrente
+  await sheetsLoad();
+  // Le pending sono state re-integrate in sheetsLoad, ora le marco synced e salvo
+  Object.keys(allLogs).forEach(date => {
+    (allLogs[date]||[]).forEach(e => {
+      if (!e.synced) { e.synced = true; e.updatedAt = new Date().toISOString(); }
+    });
+  });
+  saveAllLogs();
+  await sheetsSave();
+  log = allLogs[activeDate] || [];
+  renderChildren(); updateStats();
+  showToast('Timbrature sincronizzate');
+});
+
+/* INIT */
+loadSettings();
+// Default date range = mese corrente
+(function(){
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const lastDay = new Date(y, now.getMonth()+1, 0).getDate();
+  const from = document.getElementById('syncDateFrom');
+  const to = document.getElementById('syncDateTo');
+  if(from) from.value = y+'-'+m+'-01';
+  if(to) to.value = y+'-'+m+'-'+String(lastDay).padStart(2,'0');
+})();
+handleOAuthRedirect().then(()=>{
+  // Se non connesso dopo il tentativo di ripristino, mostra impostazioni
+  if (!_gToken) {
+    // Nascondi tutto tranne settings
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('page-settings').classList.add('active');
+    document.querySelectorAll('.nav-btn')[2].classList.add('active');
+    // Focus sul bottone login
+    setTimeout(()=>{
+      const btn = document.getElementById('btnDriveLogin');
+      if(btn){ btn.scrollIntoView({behavior:'smooth'}); btn.style.animation='pulse 1s infinite'; }
+    }, 300);
+  }
+});
+updateDateDisplay();
+renderChildren();
+updateStats();
+</script>
+</body>
+</html>
