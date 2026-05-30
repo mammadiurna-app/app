@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2d5a3d">
-<title>Mamma Diurna Â· Altieri</title>
+<title>Mamma Diurna ÃÂ· Altieri</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -81,7 +81,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .child-log-entries{border-top:1px solid var(--border)}
 .child-log-row{display:flex;align-items:center;gap:10px;padding:7px 14px 7px 60px;border-bottom:1px solid var(--border);font-size:13px}
 .child-log-row.pending{opacity:0.45}
-.child-log-row.pending .log-times::after{content:' â³';font-size:10px}
+.child-log-row.pending .log-times::after{content:' Ã¢ÂÂ³';font-size:10px}
 .child-log-row:last-child{border-bottom:none}
 .log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--accent)}
 .log-times{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);flex:1}
@@ -155,18 +155,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="header-top">
     <div>
       <div class="header-title">Mamma Diurna</div>
-      <div class="header-sub" id="headerSub">Altieri Â· Famiglie Diurne</div>
+      <div class="header-sub" id="headerSub">Altieri ÃÂ· Famiglie Diurne</div>
     </div>
     <div class="date-pill-wrap">
       <button class="date-pill" onclick="toggleCalendar(event)">
-        <span class="date-pill-text" id="headerDate">â</span>
-        <span class="date-pill-icon">â¾</span>
+        <span class="date-pill-text" id="headerDate">Ã¢ÂÂ</span>
+        <span class="date-pill-icon">Ã¢ÂÂ¾</span>
       </button>
       <div class="dp-popup" id="dpPopup">
         <div class="dp-head">
-          <button class="dp-nav" onclick="event.stopPropagation();dpMove(-1)">â¹</button>
-          <div class="dp-mlabel" id="dpLabel">â</div>
-          <button class="dp-nav" onclick="event.stopPropagation();dpMove(1)">âº</button>
+          <button class="dp-nav" onclick="event.stopPropagation();dpMove(-1)">Ã¢ÂÂ¹</button>
+          <div class="dp-mlabel" id="dpLabel">Ã¢ÂÂ</div>
+          <button class="dp-nav" onclick="event.stopPropagation();dpMove(1)">Ã¢ÂÂº</button>
         </div>
         <div class="dp-grid" id="dpGrid"></div>
       </div>
@@ -174,12 +174,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="timeout-bar" id="timeoutBar"><div class="timeout-bar-fill" id="timeoutFill"></div></div>
 </div>
-<div class="past-banner" id="pastBanner">Stai visualizzando una data passata â tocca la data per tornare ad oggi</div>
+<div class="past-banner" id="pastBanner">Stai visualizzando una data passata Ã¢ÂÂ tocca la data per tornare ad oggi</div>
 
 <nav class="nav">
   <button class="nav-btn active" onclick="showPage('bambini',this)">Bambini <span class="nav-badge" id="logBadge">0</span></button>
   <button class="nav-btn" onclick="showPage('sync',this)">Carica</button>
-  <button class="nav-btn" onclick="showPage('settings',this)">â</button>
+  <button class="nav-btn" onclick="showPage('settings',this)">Ã¢ÂÂ</button>
 </nav>
 
 <div id="page-bambini" class="page active">
@@ -220,7 +220,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="section-label">Info sessione</div>
   <div style="font-size:12px;color:var(--text3);line-height:1.8">
     <div>API: afdsonline.famigliediurne.ch</div>
-    <div>Firma: AFDS Â· Supervisore: 00000162</div>
+    <div>Firma: AFDS ÃÂ· Supervisore: 00000162</div>
     <div id="sessionInfo">Sessione: non attiva</div>
   </div>
 </div>
@@ -248,7 +248,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="sync-card">
     <h3>Sincronizzazione Google Drive</h3>
-    <p>I dati vengono salvati sul tuo Google Drive â accessibili da tutti i tuoi dispositivi.</p>
+    <p>I dati vengono salvati sul tuo Google Drive Ã¢ÂÂ accessibili da tutti i tuoi dispositivi.</p>
     <div id="driveStatus" style="font-size:13px;color:var(--text3);margin-bottom:12px">Non connesso</div>
     <button class="btn-primary" id="btnDriveLogin" onclick="driveLogin()">Accedi con Google</button>
     <button class="btn-secondary" id="btnDriveLogout" style="display:none" onclick="driveLogout()">Disconnetti</button>
@@ -263,15 +263,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-header">
-      <div class="modal-title" id="modalTitle">â</div>
-      <button class="modal-close" onclick="closeModal()">â</button>
+      <div class="modal-title" id="modalTitle">Ã¢ÂÂ</div>
+      <button class="modal-close" onclick="closeModal()">Ã¢ÂÂ</button>
     </div>
     <div class="modal-body">
       <div class="mf-row"><div class="mf-label">Ora entrata</div><input class="mf-time" id="mTimeIn" type="time" oninput="onTimeInChange()"></div>
       <div class="mf-row"><div class="mf-label">Ora uscita</div><input class="mf-time" id="mTimeOut" type="time" oninput="updateTotale()"></div>
       <div id="mRoundedRow" style="display:none;background:#fffbeb;margin:0 -18px;padding:10px 18px;border-bottom:1px solid rgba(180,83,9,0.15);gap:4px;flex-direction:column">
-        <div style="font-size:13px;font-weight:600;color:var(--warn)" id="mRoundedLine1">â  Arrotondato a 15'</div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--warn)" id="mRoundedLine2">â</div>
+        <div style="font-size:13px;font-weight:600;color:var(--warn)" id="mRoundedLine1">Ã¢ÂÂ  Arrotondato a 15'</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--warn)" id="mRoundedLine2">Ã¢ÂÂ</div>
       </div>
       <div class="mf-row" onclick="toggleCheck('mChkPattuite')"><div class="mf-label muted">Pattuite non usufruite</div><div class="mf-check" id="mChkPattuite"></div></div>
       <div class="mf-row" onclick="toggleCheck('mChkMalattia')"><div class="mf-label muted">Malattia 50%</div><div class="mf-check" id="mChkMalattia"></div></div>
@@ -284,7 +284,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="mf-row" style="border-bottom:none">
       <div class="mf-label" style="font-weight:600">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Totale ore</div>
-      <div class="mf-time" id="mTotale" style="background:var(--surface2);border-color:transparent;color:var(--text2);cursor:default;font-weight:600">â</div>
+      <div class="mf-time" id="mTotale" style="background:var(--surface2);border-color:transparent;color:var(--text2);cursor:default;font-weight:600">Ã¢ÂÂ</div>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal()">Annulla</button>
@@ -305,7 +305,7 @@ const CHILDREN=[
   {recordcode:'00001473',name:'Mia',lastname:'Gajovic',gender:2,contract:'00030624'},
   {recordcode:'00001474',name:'Teodor',lastname:'Gajovic',gender:1,contract:'00030625'},
   {recordcode:'00001499',name:'Fiamma',lastname:'Antonietti',gender:2,contract:'00030584'},
-  {recordcode:'00001504',name:'AlizÃ©e',lastname:'Comolli',gender:2,contract:'00030622'},
+  {recordcode:'00001504',name:'AlizÃÂ©e',lastname:'Comolli',gender:2,contract:'00030622'},
   {recordcode:'00002369',name:'Tina',lastname:'Djokic',gender:2,contract:'00030623'},
   {recordcode:'00002492',name:'Dunja',lastname:'Krstic',gender:2,contract:'00030629'},
   {recordcode:'00003001',name:'Aria',lastname:'Antonietti',gender:2,contract:'00030585'},
@@ -337,7 +337,7 @@ function getSettings(){try{return JSON.parse(localStorage.getItem('afds_settings
 function saveSettings(){
   const s={timeout:parseInt(document.getElementById('settingTimeout').value)||180,name:document.getElementById('settingName').value||'Altieri',proxyUrl:document.getElementById('settingProxy').value||'',roundThreshold:parseInt(document.getElementById('settingRound').value)||6};
   localStorage.setItem('afds_settings',JSON.stringify(s));
-  document.getElementById('headerSub').textContent=s.name+' Â· Famiglie Diurne';
+  document.getElementById('headerSub').textContent=s.name+' ÃÂ· Famiglie Diurne';
 }
 function loadSettings(){
   const s=getSettings();
@@ -345,7 +345,7 @@ function loadSettings(){
   document.getElementById('settingName').value=s.name||'Altieri';
   document.getElementById('settingProxy').value=s.proxyUrl||'';
   document.getElementById('settingRound').value=s.roundThreshold||6;
-  document.getElementById('headerSub').textContent=(s.name||'Altieri')+' Â· Famiglie Diurne';
+  document.getElementById('headerSub').textContent=(s.name||'Altieri')+' ÃÂ· Famiglie Diurne';
 }
 function nowHHMM(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
 function toMinutes(hhmm){if(!hhmm)return 0;const[h,m]=hhmm.split(':').map(Number);return h*60+m}
@@ -524,7 +524,7 @@ function updateRounding(){
     const parts=[];
     if(rIn!==tIn) parts.push('Entrata '+tIn+' > '+rIn);
     if(rOut!==tOut) parts.push('Uscita '+tOut+' > '+rOut);
-    document.getElementById('mRoundedLine2').textContent=parts.join(' Â· ');
+    document.getElementById('mRoundedLine2').textContent=parts.join(' ÃÂ· ');
     row.style.display='flex';
   }else{
     row.style.display='none';
@@ -551,7 +551,7 @@ function saveModal(){
     synced:false};
   if(modalEntryIdx!==null)log[modalEntryIdx]=entry;else log.push(entry);
   saveLog();closeModal();renderChildren();updateStats();
-  showToast('â '+modalChild.name+' salvato');
+  showToast('Ã¢ÂÂ '+modalChild.name+' salvato');
 }
 
 /* RENDER */
@@ -579,7 +579,7 @@ function renderChildren(){
         <div class="log-dot"></div>
         <div class="log-times">${times}</div>
         <div class="log-extras">${extras}</div>
-        <button class="log-del" onclick="event.stopPropagation();deleteEntry(${ri})">Ã</button>
+        <button class="log-del" onclick="event.stopPropagation();deleteEntry(${ri})">ÃÂ</button>
       </div>`;
     });
     const addBtn=has?`<div class="child-add-turn" onclick="event.stopPropagation();openModal('${c.recordcode}')">+ Aggiungi turno</div>`:'';
@@ -649,7 +649,7 @@ function buildSyncPreview(){
     const hasPasti=e.chkColazione||e.chkPranzo||e.chkMerenda||e.chkCena;
     const isWarn=missingOre&&!hasPasti;
     const warnClass=isWarn?'warn':'';
-    const warnIcon=isWarn?'â  ':missingOre?'â± ':'';
+    const warnIcon=isWarn?'Ã¢ÂÂ  ':missingOre?'Ã¢ÂÂ± ':'';
     const onclick=isWarn?`onclick="goToChildModal('${e.recordcode}')"`:'';
     return `<div class="sync-item ${warnClass}" ${onclick}>
       <div style="flex:1">${warnIcon}${name}</div>
@@ -731,7 +731,7 @@ async function startSync(){
   Object.keys(_svcCache).forEach(k=>delete _svcCache[k]);
   try{
     const session=await doLogin(username,password);
-    document.getElementById('sessionInfo').textContent='Sessione: attiva â';
+    document.getElementById('sessionInfo').textContent='Sessione: attiva Ã¢ÂÂ';
     showStatus('info','Caricamento '+unsync.length+' presenze...');
     let ok=0,errors=[];
     for(let i=0;i<unsync.length;i++){
@@ -746,8 +746,8 @@ async function startSync(){
         const timeTo=hasOre?toMinutes(entry.timeOut):0;
         const hasPasti=entry.chkColazione||entry.chkPranzo||entry.chkMerenda||entry.chkCena;
 
-        // Salta se non c'Ã¨ nulla da caricare
-        if(!hasOre&&!hasPasti){ errors.push(child.name+': nessun orario nÃ© pasto'); continue; }
+        // Salta se non c'ÃÂ¨ nulla da caricare
+        if(!hasOre&&!hasPasti){ errors.push(child.name+': nessun orario nÃÂ© pasto'); continue; }
 
         const base={recordcode:'',itemRecordcode:child.contract,appCode:1,correction:false,
           description1:'',description2:'',firmCode:FIRM_CODE,language:LANG,notes:'',
@@ -780,7 +780,7 @@ async function startSync(){
       }catch(e){errors.push((child?child.name:entry.recordcode)+': '+e.message)}
     }
     saveAllLogs();renderChildren();updateStats();buildSyncPreview();
-    if(errors.length===0)showStatus('success','â '+ok+' presenza/e caricate!');
+    if(errors.length===0)showStatus('success','Ã¢ÂÂ '+ok+' presenza/e caricate!');
     else showStatus('error',ok+' ok, '+errors.length+' errori: '+errors.join(' | '));
   }catch(e){showStatus('error','Errore: '+e.message)}
   btn.disabled=false;label.textContent='Carica sul portale AFDS';
@@ -801,10 +801,10 @@ function exportCSV(){
   a.download='presenze_'+activeDate+'.csv';a.click();showToast('CSV esportato');
 }
 
-/* GOOGLE SHEETS SYNC â PKCE flow */
+/* GOOGLE SHEETS SYNC Ã¢ÂÂ PKCE flow */
 const G_CLIENT_ID = '532821945699-od1p552eth41rccaf8urnlcp4ie2te10.apps.googleusercontent.com';
 const G_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-const G_REDIRECT = 'https://gianugo-altieri.github.io/mamma-diurna/';
+const G_REDIRECT = 'https://mammadiurna-app.github.io/app/';
 let _gToken = null;
 let _gRefresh = null;
 let _gSheetId = null;
@@ -838,7 +838,7 @@ async function driveLogin() {
 async function handleOAuthRedirect() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
-  // Pulisci subito l'URL dai parametri OAuth â non aspettare
+  // Pulisci subito l'URL dai parametri OAuth Ã¢ÂÂ non aspettare
   if (code || params.get('iss')) {
     history.replaceState(null, '', window.location.pathname);
   }
@@ -860,17 +860,17 @@ async function handleOAuthRedirect() {
   localStorage.removeItem('pkce_verifier');
   const s = getSettings();
   const proxyBase = (s.proxyUrl||'').trim().replace(/\/+$/,'');
-  console.log('Token exchange â proxyBase:', proxyBase, 'verifier:', verifier ? verifier.slice(0,10)+'...' : 'NULL');
+  console.log('Token exchange Ã¢ÂÂ proxyBase:', proxyBase, 'verifier:', verifier ? verifier.slice(0,10)+'...' : 'NULL');
   const base = proxyBase;
   try {
     const resp = await fetch(base + '/auth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, code_verifier: verifier })
+      body: JSON.stringify({ code, code_verifier: verifier, redirect_uri: G_REDIRECT })
     });
-    console.log('Token exchange â HTTP status:', resp.status);
+    console.log('Token exchange Ã¢ÂÂ HTTP status:', resp.status);
     const data = await resp.json();
-    console.log('Token exchange â response keys:', Object.keys(data), 'error:', data.error, 'error_description:', data.error_description);
+    console.log('Token exchange Ã¢ÂÂ response keys:', Object.keys(data), 'error:', data.error, 'error_description:', data.error_description);
     if (data.access_token) {
       _gToken = data.access_token;
       _gRefresh = data.refresh_token;
@@ -894,7 +894,7 @@ function driveLogout() {
   localStorage.clear();
   sessionStorage.clear();
   if (settings) localStorage.setItem('afds_settings', settings);
-  // Redirect con flag logout â impedisce il ripristino del token
+  // Redirect con flag logout Ã¢ÂÂ impedisce il ripristino del token
   window.location.href = window.location.pathname + '?logout=1';
 }
 // Forza ricerca/creazione foglio
@@ -994,7 +994,7 @@ async function sheetsLoad() {
   const data = await resp.json();
   const rows = data.values || [];
 
-  // Ricostruisci allLogs dal foglio â il foglio comanda
+  // Ricostruisci allLogs dal foglio Ã¢ÂÂ il foglio comanda
   const fromSheet = {};
   rows.forEach(r => {
     const [date,nome,tIn,tOut,mal,pat,col,pra,mer,cen,updatedAt] = r;
@@ -1030,7 +1030,7 @@ async function sheetsLoad() {
     return;
   }
 
-  // Foglio ha dati â sostituisce tutto il locale (foglio comanda)
+  // Foglio ha dati Ã¢ÂÂ sostituisce tutto il locale (foglio comanda)
   // Ma mantieni le timbrature pending (synced:false) dal locale
   const pending = [];
   Object.keys(allLogs).forEach(date => {
@@ -1042,7 +1042,7 @@ async function sheetsLoad() {
   // Parti dal foglio
   allLogs = fromSheet;
 
-  // Re-aggiungi pending che non sono giÃ  sul foglio (dedup per data+bambino+entrata)
+  // Re-aggiungi pending che non sono giÃÂ  sul foglio (dedup per data+bambino+entrata)
   pending.forEach(p => {
     const dayRows = allLogs[p.date] || [];
     const exists = dayRows.some(r =>
@@ -1066,7 +1066,7 @@ async function sheetsSave() {
   const allRows = [];
   Object.keys(allLogs).sort().forEach(date => {
     (allLogs[date]||[]).forEach(e => {
-      if (!e.synced) return; // Non scrivere pending â restano grigi finchÃ© offline
+      if (!e.synced) return; // Non scrivere pending Ã¢ÂÂ restano grigi finchÃÂ© offline
       const child = CHILDREN.find(c => c.recordcode === e.recordcode);
       const nome = child ? child.lastname+' '+child.name : e.recordcode;
       allRows.push({ date, timeIn: e.timeIn||'', row: [
@@ -1121,7 +1121,7 @@ function updateDriveUI(connected) {
   const btnSync = document.getElementById('btnDriveSync');
   if (!status) return;
   if (connected) {
-    status.textContent = 'Connesso â â dati sincronizzati su Drive';
+    status.textContent = 'Connesso Ã¢ÂÂ Ã¢ÂÂ dati sincronizzati su Drive';
     status.style.color = 'var(--accent)';
     btnLogin.style.display = 'none';
     btnLogout.style.display = 'block';
@@ -1172,7 +1172,7 @@ function updateDriveUI(connected) {
   const btnSync = document.getElementById('btnDriveSync');
   if (!status) return;
   if (connected) {
-    status.textContent = 'Connesso â â dati sincronizzati su Drive';
+    status.textContent = 'Connesso Ã¢ÂÂ Ã¢ÂÂ dati sincronizzati su Drive';
     status.style.color = 'var(--accent)';
     btnLogin.style.display = 'none';
     btnLogout.style.display = 'block';
@@ -1201,7 +1201,7 @@ async function driveFetch(url, opts={}) {
 }
 
 
-// Hook: saveLog â Sheets comanda, localStorage Ã¨ cache offline
+// Hook: saveLog Ã¢ÂÂ Sheets comanda, localStorage ÃÂ¨ cache offline
 function saveLog() {
   allLogs[activeDate] = log;
   saveAllLogs();
@@ -1226,7 +1226,7 @@ window.addEventListener('online', async () => {
     (allLogs[date]||[]).forEach(e => { if (!e.synced) pending.push({e, date}); });
   });
   if (pending.length === 0) return;
-  showToast('Connesso â carico ' + pending.length + ' timbrature in sospeso...');
+  showToast('Connesso Ã¢ÂÂ carico ' + pending.length + ' timbrature in sospeso...');
   // Carica foglio corrente
   await sheetsLoad();
   // Le pending sono state re-integrate in sheetsLoad, ora le marco synced e salvo
