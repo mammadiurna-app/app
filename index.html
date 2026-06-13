@@ -206,7 +206,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="sync-card">
     <h3>Credenziali portale</h3>
     <p>Inserisci le credenziali per accedere ad AFDSonline</p>
-    <div class="field-row"><div class="field-label">Username</div><input class="field-input" id="syncUser" type="text" value="l.altieri" autocomplete="username"></div>
+    <div class="field-row"><div class="field-label">Username</div><input class="field-input" id="syncUser" type="text" value="l.altieri" autocomplete="username" oninput="saveLastUsername(this.value)"></div>
     <div class="field-row"><div class="field-label">Password</div><input class="field-input" id="syncPass" type="password" value="91967" autocomplete="current-password"></div>
   </div>
   <div class="status-msg" id="syncStatus"></div>
@@ -718,9 +718,9 @@ async function startSync(){
   try{
     const session=await doLogin(username,password);
     document.getElementById('sessionInfo').textContent='Sessione: attiva ✓';
-    checkLicense(username);
     // Salva username per check all'avvio
     const _s=getSettings(); _s.lastUsername=username; localStorage.setItem('afds_settings',JSON.stringify(_s));
+    checkLicense(username);
     showStatus('info','Caricamento '+unsync.length+' presenze...');
     let ok=0,errors=[];
     for(let i=0;i<unsync.length;i++){
@@ -792,6 +792,12 @@ function exportCSV(){
 
 /* LICENSE CHECK */
 const LICENSE_CHECK_KEY = 'lic_check_date';
+
+function saveLastUsername(u) {
+  if (!u) return;
+  const s = getSettings(); s.lastUsername = u.trim();
+  localStorage.setItem('afds_settings', JSON.stringify(s));
+}
 
 async function checkLicense(username) {
   if (!username) return;
@@ -870,10 +876,14 @@ function closeLicPopup() {
 
 /* INIT */
 loadSettings();
-// Check licenza all'avvio
+// Pre-compila username AFDS se già noto
 (function(){
   const s = getSettings();
-  if (s.lastUsername) checkLicense(s.lastUsername);
+  if (s.lastUsername) {
+    const el = document.getElementById('syncUser');
+    if (el && !el.value) el.value = s.lastUsername;
+    checkLicense(s.lastUsername);
+  }
 })();
 updateDateDisplay();
 renderChildren();
