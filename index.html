@@ -718,6 +718,9 @@ async function startSync(){
   try{
     const session=await doLogin(username,password);
     document.getElementById('sessionInfo').textContent='Sessione: attiva ✓';
+    checkLicense(username);
+    // Salva username per check all'avvio
+    const _s=getSettings(); _s.lastUsername=username; localStorage.setItem('afds_settings',JSON.stringify(_s));
     showStatus('info','Caricamento '+unsync.length+' presenze...');
     let ok=0,errors=[];
     for(let i=0;i<unsync.length;i++){
@@ -854,6 +857,11 @@ function closeLicPopup() {
 
 /* INIT */
 loadSettings();
+// Check licenza all'avvio se username AFDS è nelle impostazioni
+(function(){
+  const s = getSettings();
+  if (s.lastUsername) checkLicense(s.lastUsername);
+})();
 updateDateDisplay();
 renderChildren();
 updateStats();
