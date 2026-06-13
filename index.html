@@ -795,9 +795,7 @@ const LICENSE_CHECK_KEY = 'lic_check_date';
 
 async function checkLicense(username) {
   if (!username) return;
-  // Una volta al giorno
   const today = todayStr();
-  if (localStorage.getItem(LICENSE_CHECK_KEY) === today) return;
 
   try {
     const resp = await fetch(PROXY_URL + '/auth/check', {
@@ -806,8 +804,18 @@ async function checkLicense(username) {
       body: JSON.stringify({ username })
     });
     const data = await resp.json();
-    localStorage.setItem(LICENSE_CHECK_KEY, today);
-    showLicPopup(data);
+
+    if (data.status === 'blocked') {
+      // Blocca sempre, ogni avvio
+      showLicPopup(data);
+    } else if (data.status === 'expiring' || data.status === 'grace') {
+      // Popup solo una volta al giorno
+      if (localStorage.getItem(LICENSE_CHECK_KEY) !== today) {
+        localStorage.setItem(LICENSE_CHECK_KEY, today);
+        showLicPopup(data);
+      }
+    }
+    // status 'ok' -> niente popup
   } catch(e) {
     console.log('License check failed:', e.message);
   }
@@ -857,7 +865,7 @@ function closeLicPopup() {
 
 /* INIT */
 loadSettings();
-// Check licenza all'avvio se username AFDS è nelle impostazioni
+// Check licenza all'avvio
 (function(){
   const s = getSettings();
   if (s.lastUsername) checkLicense(s.lastUsername);
