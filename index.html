@@ -205,10 +205,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="page-sync" class="page">
   <div class="sync-card">
     <h3>Credenziali portale</h3>
-    <p>Inserisci le credenziali per accedere ad AFDSonline</p>
-    <div class="field-row"><div class="field-label">Username</div><input class="field-input" id="syncUser" type="text" autocomplete="username"></div>
-    <div class="field-row"><div class="field-label">Password</div><input class="field-input" id="syncPass" type="password" autocomplete="current-password"></div>
+    <p>Le credenziali si impostano nella scheda ⚙ Impostazioni.</p>
+    <div style="font-size:13px;color:var(--text2)">Utente: <span id="syncUserDisplay" style="font-weight:600">—</span></div>
   </div>
+  <!-- Campi nascosti usati internamente -->
+  <input type="hidden" id="syncUser">
+  <input type="hidden" id="syncPass">
   <div class="status-msg" id="syncStatus"></div>
   <div class="sync-card" id="syncPreview" style="display:none">
     <h3>Riepilogo da caricare</h3>
@@ -253,6 +255,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
   <div style="font-size:12px;color:var(--text3);padding:0 4px">Dopo il timeout, la data torna automaticamente ad oggi se hai selezionato un giorno passato.</div>
+  <div style="margin-top:16px">
+    <button class="btn-primary" id="btnSaveSettings" onclick="saveAndGo()">Salva impostazioni</button>
+  </div>
+  <div id="settingsSaved" style="display:none;text-align:center;padding:12px;font-size:14px;color:var(--accent)">✓ Impostazioni salvate</div>
 </div>
 
 <!-- Modal timbratura -->
@@ -807,6 +813,25 @@ function exportCSV(){
 /* LICENSE CHECK */
 const LICENSE_CHECK_KEY = 'lic_check_date';
 
+function saveAndGo() {
+  if (!checkRequiredFields()) {
+    showToast('Inserisci username e password AFDS');
+    return;
+  }
+  saveSettings();
+  // Mostra check verde
+  const saved = document.getElementById('settingsSaved');
+  saved.style.display = 'block';
+  setTimeout(() => {
+    saved.style.display = 'none';
+    // Vai ai bambini
+    showPage('bambini', document.querySelectorAll('.nav-btn')[0]);
+    // Aggiorna check licenza con nuovo username
+    const s = getSettings();
+    if (s.afdsUser) checkLicense(s.afdsUser);
+  }, 1000);
+}
+
 function checkRequiredFields() {
   const s = getSettings();
   const hasUser = !!(s.afdsUser);
@@ -899,7 +924,11 @@ loadSettings();
 (function(){
   const s = getSettings();
   // Pre-compila campi sync dalle impostazioni
-  if (s.afdsUser) document.getElementById('syncUser').value = s.afdsUser;
+  if (s.afdsUser) {
+    document.getElementById('syncUser').value = s.afdsUser;
+    const disp = document.getElementById('syncUserDisplay');
+    if (disp) disp.textContent = s.afdsUser;
+  }
   if (s.afdsPwd) document.getElementById('syncPass').value = s.afdsPwd;
 
   if (!s.afdsUser || !s.afdsPwd) {
@@ -912,6 +941,7 @@ loadSettings();
     }, 300);
   } else {
     // Credenziali presenti — check licenza e vai ai bambini
+    console.log('Startup: checkLicense per', s.afdsUser);
     checkLicense(s.afdsUser);
   }
 })();
