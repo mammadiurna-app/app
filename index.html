@@ -357,9 +357,12 @@ function saveSettings(){
 function loadSettings(){
   const s=getSettings();
   document.getElementById('settingTimeout').value=s.timeout||180;
-  document.getElementById('settingName').value=s.name||'Altieri';
+  document.getElementById('settingName').value=s.name||'';
   document.getElementById('settingRound').value=s.roundThreshold||6;
-  document.getElementById('headerSub').textContent=(s.name||'Altieri')+' · Famiglie Diurne';
+  document.getElementById('settingAfdsUser').value=s.afdsUser||'';
+  document.getElementById('settingAfdsPwd').value=s.afdsPwd||'';
+  const displayName=(s.name||s.afdsUser||'');
+  document.getElementById('headerSub').textContent=(displayName?displayName+' · ':'')+'Famiglie Diurne';
 }
 function nowHHMM(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
 function toMinutes(hhmm){if(!hhmm)return 0;const[h,m]=hhmm.split(':').map(Number);return h*60+m}
