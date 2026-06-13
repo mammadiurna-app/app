@@ -516,11 +516,10 @@ async function openModal(rc,entryIdx){
       licData=await resp.json();
     }catch(e){console.log('License check failed:',e.message);}
     localStorage.setItem('lic_status',licData.status);
-    const isPast=activeDate<todayStr();
     if(licData.status==='blocked'){
-      // Date passate: popup informativo, poi apre la modale
-      // Data odierna o futura: popup bloccante
-      showLicPopup(licData,isPast?()=>_doOpenModal(rc,entryIdx):null);
+      // allowedUntil: ultima data coperta dalla licenza inclusa la grace period
+      const withinLicense=licData.allowedUntil&&activeDate<=licData.allowedUntil;
+      showLicPopup(licData,withinLicense?()=>_doOpenModal(rc,entryIdx):null);
       return;
     }
     if(licData.status==='expiring'||licData.status==='grace'){
@@ -944,7 +943,7 @@ function showLicPopup(data, onContinue) {
     if (onContinue) {
       // Data passata: popup informativo, poi continua
       btn.className = 'lic-btn warn';
-      btn.textContent = 'OK, continua (data precedente)';
+      btn.textContent = 'OK, continua';
       btn.onclick = () => { closeLicPopup(); onContinue(); };
     } else {
       // Data odierna: bloccante
