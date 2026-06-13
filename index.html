@@ -230,10 +230,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="sync-card">
     <h3>Impostazioni</h3>
     <p>Configura il comportamento dell'applicazione</p>
-    <div class="field-row">
-      <div class="field-label">URL Proxy (es. https://afds-proxy-xxxx.onrender.com)</div>
-      <input class="field-input" id="settingProxy" type="url" placeholder="https://afds-proxy-xxxx.onrender.com" oninput="saveSettings()">
-    </div>
+
     <div class="field-row">
       <div class="field-label">Arrotondamento minuti (soglia)</div>
       <input class="field-input" id="settingRound" type="number" min="1" max="14" value="6" oninput="saveSettings()">
@@ -298,7 +295,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <script>
-function getBaseURL(){const s=getSettings();return(s.proxyUrl||'').trim().replace(/\/+$/,'')+'/api'}
+function getBaseURL(){return PROXY_URL+'/api'}
 const FIRM_CODE='AFDS',SUPERVISOR='00000162',LANG=1;
 
 const CHILDREN=[
@@ -337,7 +334,7 @@ function loadAllLogs(){try{return JSON.parse(localStorage.getItem('afds_all_logs
 function saveAllLogs(){localStorage.setItem('afds_all_logs',JSON.stringify(allLogs))}
 function getSettings(){try{return JSON.parse(localStorage.getItem('afds_settings')||'{}')}catch(e){return{}}}
 function saveSettings(){
-  const s={timeout:parseInt(document.getElementById('settingTimeout').value)||180,name:document.getElementById('settingName').value||'Altieri',proxyUrl:document.getElementById('settingProxy').value||'',roundThreshold:parseInt(document.getElementById('settingRound').value)||6};
+  const s={timeout:parseInt(document.getElementById('settingTimeout').value)||180,name:document.getElementById('settingName').value||'Altieri',roundThreshold:parseInt(document.getElementById('settingRound').value)||6};
   localStorage.setItem('afds_settings',JSON.stringify(s));
   document.getElementById('headerSub').textContent=s.name+' · Famiglie Diurne';
 }
@@ -345,7 +342,6 @@ function loadSettings(){
   const s=getSettings();
   document.getElementById('settingTimeout').value=s.timeout||180;
   document.getElementById('settingName').value=s.name||'Altieri';
-  document.getElementById('settingProxy').value=s.proxyUrl||'';
   document.getElementById('settingRound').value=s.roundThreshold||6;
   document.getElementById('headerSub').textContent=(s.name||'Altieri')+' · Famiglie Diurne';
 }
@@ -798,12 +794,8 @@ async function checkLicense(username) {
   const today = todayStr();
   if (localStorage.getItem(LICENSE_CHECK_KEY) === today) return;
 
-  const s = getSettings();
-  const proxyBase = (s.proxyUrl||'').trim().replace(/\/+$/, '');
-  if (!proxyBase) return;
-
   try {
-    const resp = await fetch(proxyBase + '/auth/check', {
+    const resp = await fetch(PROXY_URL + '/auth/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
