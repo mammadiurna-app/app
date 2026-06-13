@@ -206,8 +206,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="sync-card">
     <h3>Credenziali portale</h3>
     <p>Inserisci le credenziali per accedere ad AFDSonline</p>
-    <div class="field-row"><div class="field-label">Username</div><input class="field-input" id="syncUser" type="text" value="l.altieri" autocomplete="username" oninput="saveLastUsername(this.value)"></div>
-    <div class="field-row"><div class="field-label">Password</div><input class="field-input" id="syncPass" type="password" value="91967" autocomplete="current-password"></div>
+    <div class="field-row"><div class="field-label">Username</div><input class="field-input" id="syncUser" type="text" autocomplete="username"></div>
+    <div class="field-row"><div class="field-label">Password</div><input class="field-input" id="syncPass" type="password" autocomplete="current-password"></div>
   </div>
   <div class="status-msg" id="syncStatus"></div>
   <div class="sync-card" id="syncPreview" style="display:none">
@@ -231,6 +231,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <h3>Impostazioni</h3>
     <p>Configura il comportamento dell'applicazione</p>
 
+    <div class="field-row">
+      <div class="field-label" id="lblAfdsUser">Username portale AFDS *</div>
+      <input class="field-input" id="settingAfdsUser" type="text" autocomplete="username" placeholder="es. l.altieri" oninput="saveSettings();checkRequiredFields()">
+    </div>
+    <div class="field-row">
+      <div class="field-label" id="lblAfdsPwd">Password portale AFDS *</div>
+      <input class="field-input" id="settingAfdsPwd" type="password" autocomplete="current-password" placeholder="password" oninput="saveSettings();checkRequiredFields()">
+    </div>
     <div class="field-row">
       <div class="field-label">Arrotondamento minuti (soglia)</div>
       <input class="field-input" id="settingRound" type="number" min="1" max="14" value="6" oninput="saveSettings()">
@@ -472,6 +480,12 @@ function saveLog(){allLogs[activeDate]=log;saveAllLogs()}
 /* MODAL */
 function openModal(rc,entryIdx){
   resetInactivityTimer();
+  // Verifica licenza prima di aprire la modale
+  const _lic = localStorage.getItem('lic_status');
+  if (_lic === 'blocked') {
+    showLicPopup({status:'blocked', message:'Licenza scaduta. Contatta Mamma Diurna App per rinnovare.'});
+    return;
+  }
   modalChild=CHILDREN.find(c=>c.recordcode===rc);
   if(!modalChild)return;
   modalEntryIdx=(entryIdx!==undefined)?entryIdx:null;
@@ -793,10 +807,14 @@ function exportCSV(){
 /* LICENSE CHECK */
 const LICENSE_CHECK_KEY = 'lic_check_date';
 
-function saveLastUsername(u) {
-  if (!u) return;
-  const s = getSettings(); s.lastUsername = u.trim();
-  localStorage.setItem('afds_settings', JSON.stringify(s));
+function checkRequiredFields() {
+  const s = getSettings();
+  const hasUser = !!(s.afdsUser);
+  const hasPwd = !!(s.afdsPwd);
+  // Evidenzia campi mancanti
+  document.getElementById('settingAfdsUser').style.borderColor = hasUser ? '' : 'var(--danger)';
+  document.getElementById('settingAfdsPwd').style.borderColor = hasPwd ? '' : 'var(--danger)';
+  return hasUser && hasPwd;
 }
 
 async function checkLicense(username) {
@@ -811,7 +829,8 @@ async function checkLicense(username) {
     const data = await resp.json();
     console.log('License check result:', data);
 
-    // 2. Se ok, niente da fare
+    // 2. Salva lo stato per uso immediato (openModal)
+    localStorage.setItem('lic_status', data.status);
     if (data.status === 'ok') return;
 
     // 3. Controlla se oggi è già uscito un popup
@@ -876,13 +895,24 @@ function closeLicPopup() {
 
 /* INIT */
 loadSettings();
-// Pre-compila username AFDS se già noto
+// All'avvio: verifica credenziali e blocca se mancanti
 (function(){
   const s = getSettings();
-  if (s.lastUsername) {
-    const el = document.getElementById('syncUser');
-    if (el && !el.value) el.value = s.lastUsername;
-    checkLicense(s.lastUsername);
+  // Pre-compila campi sync dalle impostazioni
+  if (s.afdsUser) document.getElementById('syncUser').value = s.afdsUser;
+  if (s.afdsPwd) document.getElementById('syncPass').value = s.afdsPwd;
+
+  if (!s.afdsUser || !s.afdsPwd) {
+    // Credenziali mancanti — vai alle impostazioni e evidenzia
+    showPage('settings', document.querySelectorAll('.nav-btn')[2]);
+    setTimeout(() => {
+      checkRequiredFields();
+      document.getElementById('settingAfdsUser').focus();
+      showToast('Inserisci username e password AFDS per iniziare');
+    }, 300);
+  } else {
+    // Credenziali presenti — check licenza e vai ai bambini
+    checkLicense(s.afdsUser);
   }
 })();
 updateDateDisplay();
