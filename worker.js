@@ -37,13 +37,24 @@ async function checkLicenza(username) {
     }
 
     const attiva = (row[3]||'').toLowerCase() === 'si';
-    if (!attiva) return { status: 'blocked', message: 'Licenza disattivata. Contatta Mamma Diurna App.' };
+    if (!attiva) {
+      let allowedUntil = null;
+      if (row[2]) {
+        const d = new Date(row[2]); d.setDate(d.getDate() + GRACE_DAYS);
+        allowedUntil = d.toISOString().slice(0, 10);
+      }
+      return { status: 'blocked', message: 'Licenza disattivata. Contatta Mamma Diurna App.', ...(allowedUntil ? { allowedUntil } : {}) };
+    }
 
     const scadenza = new Date(row[2]);
     scadenza.setHours(0,0,0,0);
     const diffDays = Math.ceil((scadenza - today) / (1000*60*60*24));
 
-    if (diffDays < -GRACE_DAYS) return { status: 'blocked', message: 'Licenza scaduta. Contatta Mamma Diurna App.' };
+    if (diffDays < -GRACE_DAYS) {
+      const graceEnd = new Date(scadenza); graceEnd.setDate(graceEnd.getDate() + GRACE_DAYS);
+      const allowedUntil = graceEnd.toISOString().slice(0, 10);
+      return { status: 'blocked', message: 'Licenza scaduta. Contatta Mamma Diurna App.', allowedUntil };
+    }
     if (diffDays < 0) return {
       status: 'grace',
       daysLeft: GRACE_DAYS + diffDays,
