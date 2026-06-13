@@ -795,27 +795,32 @@ const LICENSE_CHECK_KEY = 'lic_check_date';
 
 async function checkLicense(username) {
   if (!username) return;
-  const today = todayStr();
-
   try {
+    // 1. Chiedi lo stato al server
     const resp = await fetch(PROXY_URL + '/auth/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
     });
     const data = await resp.json();
+    console.log('License check result:', data);
 
-    if (data.status === 'blocked') {
-      // Blocca sempre, ogni avvio
-      showLicPopup(data);
-    } else if (data.status === 'expiring' || data.status === 'grace') {
-      // Popup solo una volta al giorno
-      if (localStorage.getItem(LICENSE_CHECK_KEY) !== today) {
+    // 2. Se ok, niente da fare
+    if (data.status === 'ok') return;
+
+    // 3. Controlla se oggi è già uscito un popup
+    const today = todayStr();
+    const shownToday = localStorage.getItem(LICENSE_CHECK_KEY) === today;
+
+    // 4. Mostra popup se:
+    //    - non è ancora uscito oggi, OPPURE
+    //    - è blocked (esce sempre)
+    if (!shownToday || data.status === 'blocked') {
+      if (data.status !== 'blocked') {
         localStorage.setItem(LICENSE_CHECK_KEY, today);
-        showLicPopup(data);
       }
+      showLicPopup(data);
     }
-    // status 'ok' -> niente popup
   } catch(e) {
     console.log('License check failed:', e.message);
   }
