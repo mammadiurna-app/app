@@ -10,19 +10,17 @@ const ENDPOINT_MAP = {
 };
 
 const BASE = 'https://afdsonline.famigliediurne.ch';
-const GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID_SECRET';
-const GOOGLE_CLIENT_SECRET = 'GOOGLE_CLIENT_SECRET_SECRET';
 const REDIRECT_URI = 'https://mammadiurna-app.github.io/app/';
-
-// Lettura foglio licenze con API key pubblica
-const SHEETS_API_KEY = 'SHEETS_API_KEY_SECRET';
 const LICENZE_SHEET_ID = '14DhCWCYlte2zhQk74_LG-IovR41W47TajWZBsCdhXE0';
 const GRACE_DAYS = 3;
 const WARN_DAYS = 10;
 
-async function checkLicenza(username) {
+// Segreti letti da env (wrangler secret put):
+// GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SHEETS_API_KEY
+
+async function checkLicenza(username, sheetsApiKey) {
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${LICENZE_SHEET_ID}/values/Foglio1!A2:E100?key=${SHEETS_API_KEY}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${LICENZE_SHEET_ID}/values/Foglio1!A2:E100?key=${sheetsApiKey}`;
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('Sheets HTTP ' + resp.status);
     const data = await resp.json();
@@ -32,7 +30,6 @@ async function checkLicenza(username) {
     const row = rows.find(r => (r[0]||'').toLowerCase() === username.toLowerCase());
 
     if (!row) {
-      // Nuovo utente — periodo di grazia
       return { status: 'grace', daysLeft: GRACE_DAYS, message: `Periodo di prova: ${GRACE_DAYS} giorni rimanenti` };
     }
 
@@ -87,7 +84,7 @@ export default {
       return cors(new Response(JSON.stringify({
         status: 'ok',
         service: 'AFDS Worker',
-        version: '2.2.0',
+        version: '2.3.0',
         buildDate: '2026-06-13',
         features: ['afds-proxy', 'pkce-oauth', 'licenze-api-key']
       }), { headers: { 'Content-Type': 'application/json' } }));
@@ -99,7 +96,7 @@ export default {
       try { body = await request.json(); } catch(e) {
         return cors(jsonResp({ error: 'invalid_request' }, 400));
       }
-      const result = await checkLicenza(body.username || '');
+      const result = await checkLicenza(body.username || '', env.SHEETS_API_KEY);
       return cors(jsonResp(result));
     }
 
@@ -116,8 +113,8 @@ export default {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
-            client_id: GOOGLE_CLIENT_ID,
-            client_secret: GOOGLE_CLIENT_SECRET,
+            client_id: env.GOOGLE_CLIENT_ID,
+            client_secret: env.GOOGLE_CLIENT_SECRET,
             code, code_verifier,
             grant_type: 'authorization_code',
             redirect_uri: REDIRECT_URI,

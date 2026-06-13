@@ -3,7 +3,29 @@
     "allow": [
       "Bash(gh auth *)",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)",
+      "Bash(curl -fsSL https://nodejs.org/dist/v20.11.0/node-v20.11.0-linux-x64.tar.xz -o /tmp/node.tar.xz)",
+      "Bash(curl -s https://afds-proxy.gianugo-altieri.workers.dev/)",
+      "Bash(curl -s -X POST https://afds-proxy.gianugo-altieri.workers.dev/auth/check -H 'Content-Type: application/json' -d '{\"username\":\"l.altieri\"}')",
+      "Bash(curl -s -X POST https://afds-proxy.gianugo-altieri.workers.dev/auth/check -H 'Content-Type: application/json' -d '{\"username\":\"utente.inesistente\"}')",
+      "Bash(curl -s -I -X OPTIONS https://afds-proxy.gianugo-altieri.workers.dev/auth/check -H 'Origin: https://mammadiurna-app.github.io')",
+      "Bash(curl -s -X POST https://afds-proxy.gianugo-altieri.workers.dev/api/EndpointInesistente -H 'Content-Type: application/json' -d '{}')",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg)",
+      "Bash(sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg)",
+      "Bash(dpkg --print-architecture)",
+      "Bash(echo \"deb [arch=$\\(dpkg --print-architecture\\) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\")",
+      "Bash(sudo tee /etc/apt/sources.list.d/github-cli.list)",
+      "Bash(sudo apt update -qq)",
+      "Bash(sudo apt install gh -y)",
+      "Bash(ssh-keyscan github.com)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(git filter-branch *)",
+      "Bash(git stash *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --tree-filter ' *)"
     ]
   }
 }
