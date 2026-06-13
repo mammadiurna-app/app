@@ -833,10 +833,8 @@ function saveAndGo() {
 }
 
 function checkRequiredFields() {
-  const s = getSettings();
-  const hasUser = !!(s.afdsUser);
-  const hasPwd = !!(s.afdsPwd);
-  // Evidenzia campi mancanti
+  const hasUser = !!(document.getElementById('settingAfdsUser').value.trim());
+  const hasPwd = !!(document.getElementById('settingAfdsPwd').value.trim());
   document.getElementById('settingAfdsUser').style.borderColor = hasUser ? '' : 'var(--danger)';
   document.getElementById('settingAfdsPwd').style.borderColor = hasPwd ? '' : 'var(--danger)';
   return hasUser && hasPwd;
