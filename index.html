@@ -510,6 +510,11 @@ async function openModal(rc,entryIdx){
   resetInactivityTimer();
   const s=getSettings();
   const username=s.afdsUser;
+  if(!username){
+    showToast('Inserisci le credenziali nelle Impostazioni');
+    showPage('settings',document.querySelectorAll('.nav-btn')[2]);
+    return;
+  }
   if(username){
     let licData={status:'ok'};
     try{
