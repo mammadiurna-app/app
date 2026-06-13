@@ -505,14 +505,36 @@ function getEntriesForChild(rc){return log.filter(e=>e.recordcode===rc)}
 function saveLog(){allLogs[activeDate]=log;saveAllLogs()}
 
 /* MODAL */
-function openModal(rc,entryIdx){
+async function openModal(rc,entryIdx){
   resetInactivityTimer();
-  // Verifica licenza prima di aprire la modale
-  const _lic = localStorage.getItem('lic_status');
-  if (_lic === 'blocked') {
-    showLicPopup({status:'blocked', message:'Licenza scaduta. Contatta Mamma Diurna App per rinnovare.'});
-    return;
+  const s=getSettings();
+  const username=s.afdsUser;
+  if(username){
+    let licData={status:'ok'};
+    try{
+      const resp=await fetch(PROXY_URL+'/auth/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username})});
+      licData=await resp.json();
+    }catch(e){console.log('License check failed:',e.message);}
+    localStorage.setItem('lic_status',licData.status);
+    const isPast=activeDate<todayStr();
+    if(licData.status==='blocked'){
+      // Date passate: popup informativo, poi apre la modale
+      // Data odierna o futura: popup bloccante
+      showLicPopup(licData,isPast?()=>_doOpenModal(rc,entryIdx):null);
+      return;
+    }
+    if(licData.status==='expiring'||licData.status==='grace'){
+      const shownKey='lic_shown_'+activeDate;
+      if(!localStorage.getItem(shownKey)){
+        localStorage.setItem(shownKey,'1');
+        showLicPopup(licData,()=>_doOpenModal(rc,entryIdx));
+        return;
+      }
+    }
   }
+  _doOpenModal(rc,entryIdx);
+}
+function _doOpenModal(rc,entryIdx){
   modalChild=CHILDREN.find(c=>c.recordcode===rc);
   if(!modalChild)return;
   modalEntryIdx=(entryIdx!==undefined)?entryIdx:null;
@@ -847,9 +869,6 @@ function saveAndGo() {
     saved.style.display = 'none';
     // Vai ai bambini
     showPage('bambini', document.querySelectorAll('.nav-btn')[0]);
-    // Aggiorna check licenza con nuovo username
-    const s = getSettings();
-    if (s.afdsUser) checkLicense(s.afdsUser);
   }, 1000);
 }
 
@@ -895,8 +914,8 @@ async function checkLicense(username) {
   }
 }
 
-function showLicPopup(data) {
-  if (data.status === 'ok') return; // Tutto bene, niente popup
+function showLicPopup(data, onContinue) {
+  if (data.status === 'ok') return;
 
   const overlay = document.getElementById('licOverlay');
   const icon = document.getElementById('licIcon');
@@ -910,25 +929,29 @@ function showLicPopup(data) {
     msg.textContent = data.message || 'La licenza sta per scadere.';
     btn.className = 'lic-btn warn';
     btn.textContent = 'OK, continua';
-    btn.onclick = closeLicPopup;
+    btn.onclick = () => { closeLicPopup(); if(onContinue) onContinue(); };
   } else if (data.status === 'grace') {
     icon.textContent = '⏳';
     title.textContent = 'Periodo di tolleranza';
     msg.textContent = (data.message || '') + '\nContatta Mamma Diurna App per rinnovare.';
     btn.className = 'lic-btn warn';
     btn.textContent = 'OK, continua';
-    btn.onclick = closeLicPopup;
+    btn.onclick = () => { closeLicPopup(); if(onContinue) onContinue(); };
   } else if (data.status === 'blocked') {
     icon.textContent = '🔒';
     title.textContent = 'Licenza scaduta';
     msg.textContent = 'La licenza è scaduta. Contatta Mamma Diurna App per rinnovare.';
-    btn.className = 'lic-btn block';
-    btn.textContent = 'App bloccata';
-    btn.onclick = null;
-    // Blocca navigazione
-    document.querySelectorAll('.nav-btn').forEach(b => b.style.pointerEvents = 'none');
-    document.getElementById('childrenList').style.opacity = '0.3';
-    document.getElementById('childrenList').style.pointerEvents = 'none';
+    if (onContinue) {
+      // Data passata: popup informativo, poi continua
+      btn.className = 'lic-btn warn';
+      btn.textContent = 'OK, continua (data precedente)';
+      btn.onclick = () => { closeLicPopup(); onContinue(); };
+    } else {
+      // Data odierna: bloccante
+      btn.className = 'lic-btn block';
+      btn.textContent = 'App bloccata';
+      btn.onclick = null;
+    }
   }
   overlay.classList.add('open');
 }
@@ -958,10 +981,6 @@ loadSettings();
       document.getElementById('settingAfdsUser').focus();
       showToast('Inserisci username e password AFDS per iniziare');
     }, 300);
-  } else {
-    // Credenziali presenti — check licenza e vai ai bambini
-    console.log('Startup: checkLicense per', s.afdsUser);
-    checkLicense(s.afdsUser);
   }
 })();
 updateDateDisplay();
