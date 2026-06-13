@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2d5a3d">
-<title>Mamma Diurna ÃÂ· Altieri</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Mamma Diurna">
+<title>Mamma Diurna · Altieri</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -80,8 +83,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .child-row-hint{display:none}
 .child-log-entries{border-top:1px solid var(--border)}
 .child-log-row{display:flex;align-items:center;gap:10px;padding:7px 14px 7px 60px;border-bottom:1px solid var(--border);font-size:13px}
-.child-log-row.pending{opacity:0.45}
-.child-log-row.pending .log-times::after{content:' Ã¢ÂÂ³';font-size:10px}
 .child-log-row:last-child{border-bottom:none}
 .log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--accent)}
 .log-times{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);flex:1}
@@ -143,7 +144,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-cancel:active{background:#922b21}
 
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+/* LICENSE POPUP */
+.lic-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;align-items:center;justify-content:center;padding:20px}
+.lic-overlay.open{display:flex}
+.lic-box{background:var(--surface);border-radius:var(--radius);padding:24px 20px;max-width:340px;width:100%;text-align:center}
+.lic-icon{font-size:40px;margin-bottom:12px}
+.lic-title{font-size:17px;font-weight:600;margin-bottom:8px}
+.lic-msg{font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.5}
+.lic-btn{width:100%;padding:13px;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer}
+.lic-btn.ok{background:var(--accent);color:white}
+.lic-btn.warn{background:var(--warn);color:white}
+.lic-btn.block{background:var(--danger);color:white;cursor:default}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:24px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:320px}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -155,18 +166,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="header-top">
     <div>
       <div class="header-title">Mamma Diurna</div>
-      <div class="header-sub" id="headerSub">Altieri ÃÂ· Famiglie Diurne</div>
+      <div class="header-sub" id="headerSub">Altieri · Famiglie Diurne</div>
     </div>
     <div class="date-pill-wrap">
       <button class="date-pill" onclick="toggleCalendar(event)">
-        <span class="date-pill-text" id="headerDate">Ã¢ÂÂ</span>
-        <span class="date-pill-icon">Ã¢ÂÂ¾</span>
+        <span class="date-pill-text" id="headerDate">—</span>
+        <span class="date-pill-icon">▾</span>
       </button>
       <div class="dp-popup" id="dpPopup">
         <div class="dp-head">
-          <button class="dp-nav" onclick="event.stopPropagation();dpMove(-1)">Ã¢ÂÂ¹</button>
-          <div class="dp-mlabel" id="dpLabel">Ã¢ÂÂ</div>
-          <button class="dp-nav" onclick="event.stopPropagation();dpMove(1)">Ã¢ÂÂº</button>
+          <button class="dp-nav" onclick="event.stopPropagation();dpMove(-1)">‹</button>
+          <div class="dp-mlabel" id="dpLabel">—</div>
+          <button class="dp-nav" onclick="event.stopPropagation();dpMove(1)">›</button>
         </div>
         <div class="dp-grid" id="dpGrid"></div>
       </div>
@@ -174,12 +185,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="timeout-bar" id="timeoutBar"><div class="timeout-bar-fill" id="timeoutFill"></div></div>
 </div>
-<div class="past-banner" id="pastBanner">Stai visualizzando una data passata Ã¢ÂÂ tocca la data per tornare ad oggi</div>
+<div class="past-banner" id="pastBanner">Stai visualizzando una data passata — tocca la data per tornare ad oggi</div>
 
 <nav class="nav">
   <button class="nav-btn active" onclick="showPage('bambini',this)">Bambini <span class="nav-badge" id="logBadge">0</span></button>
   <button class="nav-btn" onclick="showPage('sync',this)">Carica</button>
-  <button class="nav-btn" onclick="showPage('settings',this)">Ã¢ÂÂ</button>
+  <button class="nav-btn" onclick="showPage('settings',this)">⚙</button>
 </nav>
 
 <div id="page-bambini" class="page active">
@@ -198,16 +209,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="field-row"><div class="field-label">Username</div><input class="field-input" id="syncUser" type="text" value="l.altieri" autocomplete="username"></div>
     <div class="field-row"><div class="field-label">Password</div><input class="field-input" id="syncPass" type="password" value="91967" autocomplete="current-password"></div>
   </div>
-  <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-    <div style="flex:1">
-      <div class="field-label">Da</div>
-      <input class="field-input" id="syncDateFrom" type="date">
-    </div>
-    <div style="flex:1">
-      <div class="field-label">A</div>
-      <input class="field-input" id="syncDateTo" type="date">
-    </div>
-  </div>
   <div class="status-msg" id="syncStatus"></div>
   <div class="sync-card" id="syncPreview" style="display:none">
     <h3>Riepilogo da caricare</h3>
@@ -220,7 +221,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="section-label">Info sessione</div>
   <div style="font-size:12px;color:var(--text3);line-height:1.8">
     <div>API: afdsonline.famigliediurne.ch</div>
-    <div>Firma: AFDS ÃÂ· Supervisore: 00000162</div>
+    <div>Firma: AFDS · Supervisore: 00000162</div>
     <div id="sessionInfo">Sessione: non attiva</div>
   </div>
 </div>
@@ -246,15 +247,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <input class="field-input" id="settingName" type="text" value="Altieri" oninput="saveSettings()">
     </div>
   </div>
-  <div class="sync-card">
-    <h3>Sincronizzazione Google Drive</h3>
-    <p>I dati vengono salvati sul tuo Google Drive Ã¢ÂÂ accessibili da tutti i tuoi dispositivi.</p>
-    <div id="driveStatus" style="font-size:13px;color:var(--text3);margin-bottom:12px">Non connesso</div>
-    <button class="btn-primary" id="btnDriveLogin" onclick="driveLogin()">Accedi con Google</button>
-    <button class="btn-secondary" id="btnDriveLogout" style="display:none" onclick="driveLogout()">Disconnetti</button>
-    <button class="btn-secondary" id="btnDriveSync" style="display:none" onclick="driveSyncNow()">Sincronizza ora</button>
-    <button class="btn-secondary" id="btnDriveReinit" style="display:none" onclick="sheetsReinit()">Ricrea foglio</button>
-  </div>
   <div style="font-size:12px;color:var(--text3);padding:0 4px">Dopo il timeout, la data torna automaticamente ad oggi se hai selezionato un giorno passato.</div>
 </div>
 
@@ -263,15 +255,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Ã¢ÂÂ</div>
-      <button class="modal-close" onclick="closeModal()">Ã¢ÂÂ</button>
+      <div class="modal-title" id="modalTitle">—</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="mf-row"><div class="mf-label">Ora entrata</div><input class="mf-time" id="mTimeIn" type="time" oninput="onTimeInChange()"></div>
       <div class="mf-row"><div class="mf-label">Ora uscita</div><input class="mf-time" id="mTimeOut" type="time" oninput="updateTotale()"></div>
       <div id="mRoundedRow" style="display:none;background:#fffbeb;margin:0 -18px;padding:10px 18px;border-bottom:1px solid rgba(180,83,9,0.15);gap:4px;flex-direction:column">
-        <div style="font-size:13px;font-weight:600;color:var(--warn)" id="mRoundedLine1">Ã¢ÂÂ  Arrotondato a 15'</div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--warn)" id="mRoundedLine2">Ã¢ÂÂ</div>
+        <div style="font-size:13px;font-weight:600;color:var(--warn)" id="mRoundedLine1">⚠ Arrotondato a 15'</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--warn)" id="mRoundedLine2">—</div>
       </div>
       <div class="mf-row" onclick="toggleCheck('mChkPattuite')"><div class="mf-label muted">Pattuite non usufruite</div><div class="mf-check" id="mChkPattuite"></div></div>
       <div class="mf-row" onclick="toggleCheck('mChkMalattia')"><div class="mf-label muted">Malattia 50%</div><div class="mf-check" id="mChkMalattia"></div></div>
@@ -284,7 +276,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="mf-row" style="border-bottom:none">
       <div class="mf-label" style="font-weight:600">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Totale ore</div>
-      <div class="mf-time" id="mTotale" style="background:var(--surface2);border-color:transparent;color:var(--text2);cursor:default;font-weight:600">Ã¢ÂÂ</div>
+      <div class="mf-time" id="mTotale" style="background:var(--surface2);border-color:transparent;color:var(--text2);cursor:default;font-weight:600">—</div>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal()">Annulla</button>
@@ -294,6 +286,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- License popup -->
+<div class="lic-overlay" id="licOverlay">
+  <div class="lic-box">
+    <div class="lic-icon" id="licIcon">⚠️</div>
+    <div class="lic-title" id="licTitle">Verifica licenza</div>
+    <div class="lic-msg" id="licMsg">Controllo in corso...</div>
+    <button class="lic-btn" id="licBtn" onclick="closeLicPopup()">OK, continua</button>
+  </div>
+</div>
 
 <script>
 function getBaseURL(){const s=getSettings();return(s.proxyUrl||'').trim().replace(/\/+$/,'')+'/api'}
@@ -305,7 +307,7 @@ const CHILDREN=[
   {recordcode:'00001473',name:'Mia',lastname:'Gajovic',gender:2,contract:'00030624'},
   {recordcode:'00001474',name:'Teodor',lastname:'Gajovic',gender:1,contract:'00030625'},
   {recordcode:'00001499',name:'Fiamma',lastname:'Antonietti',gender:2,contract:'00030584'},
-  {recordcode:'00001504',name:'AlizÃÂ©e',lastname:'Comolli',gender:2,contract:'00030622'},
+  {recordcode:'00001504',name:'Alizée',lastname:'Comolli',gender:2,contract:'00030622'},
   {recordcode:'00002369',name:'Tina',lastname:'Djokic',gender:2,contract:'00030623'},
   {recordcode:'00002492',name:'Dunja',lastname:'Krstic',gender:2,contract:'00030629'},
   {recordcode:'00003001',name:'Aria',lastname:'Antonietti',gender:2,contract:'00030585'},
@@ -337,7 +339,7 @@ function getSettings(){try{return JSON.parse(localStorage.getItem('afds_settings
 function saveSettings(){
   const s={timeout:parseInt(document.getElementById('settingTimeout').value)||180,name:document.getElementById('settingName').value||'Altieri',proxyUrl:document.getElementById('settingProxy').value||'',roundThreshold:parseInt(document.getElementById('settingRound').value)||6};
   localStorage.setItem('afds_settings',JSON.stringify(s));
-  document.getElementById('headerSub').textContent=s.name+' ÃÂ· Famiglie Diurne';
+  document.getElementById('headerSub').textContent=s.name+' · Famiglie Diurne';
 }
 function loadSettings(){
   const s=getSettings();
@@ -345,7 +347,7 @@ function loadSettings(){
   document.getElementById('settingName').value=s.name||'Altieri';
   document.getElementById('settingProxy').value=s.proxyUrl||'';
   document.getElementById('settingRound').value=s.roundThreshold||6;
-  document.getElementById('headerSub').textContent=(s.name||'Altieri')+' ÃÂ· Famiglie Diurne';
+  document.getElementById('headerSub').textContent=(s.name||'Altieri')+' · Famiglie Diurne';
 }
 function nowHHMM(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
 function toMinutes(hhmm){if(!hhmm)return 0;const[h,m]=hhmm.split(':').map(Number);return h*60+m}
@@ -524,7 +526,7 @@ function updateRounding(){
     const parts=[];
     if(rIn!==tIn) parts.push('Entrata '+tIn+' > '+rIn);
     if(rOut!==tOut) parts.push('Uscita '+tOut+' > '+rOut);
-    document.getElementById('mRoundedLine2').textContent=parts.join(' ÃÂ· ');
+    document.getElementById('mRoundedLine2').textContent=parts.join(' · ');
     row.style.display='flex';
   }else{
     row.style.display='none';
@@ -551,7 +553,7 @@ function saveModal(){
     synced:false};
   if(modalEntryIdx!==null)log[modalEntryIdx]=entry;else log.push(entry);
   saveLog();closeModal();renderChildren();updateStats();
-  showToast('Ã¢ÂÂ '+modalChild.name+' salvato');
+  showToast('✓ '+modalChild.name+' salvato');
 }
 
 /* RENDER */
@@ -575,11 +577,11 @@ function renderChildren(){
       const ri=log.indexOf(e);
       const times=[e.timeIn,e.timeOut].filter(Boolean).join(' -> ');
       const extras=['Pattuite','Malattia','Colazione','Pranzo','Merenda','Cena'].filter(k=>e['chk'+k]).join(', ');
-      logRows+=`<div class="child-log-row${e.synced===false?' pending':''}" onclick="event.stopPropagation();openModal('${c.recordcode}',${ri})">
+      logRows+=`<div class="child-log-row" onclick="event.stopPropagation();openModal('${c.recordcode}',${ri})">
         <div class="log-dot"></div>
         <div class="log-times">${times}</div>
         <div class="log-extras">${extras}</div>
-        <button class="log-del" onclick="event.stopPropagation();deleteEntry(${ri})">ÃÂ</button>
+        <button class="log-del" onclick="event.stopPropagation();deleteEntry(${ri})">×</button>
       </div>`;
     });
     const addBtn=has?`<div class="child-add-turn" onclick="event.stopPropagation();openModal('${c.recordcode}')">+ Aggiungi turno</div>`:'';
@@ -609,15 +611,7 @@ function updateStats(){
   const el=document.getElementById('statOre');
   if(el) el.textContent=h+':'+String(m).padStart(2,'0');
 }
-function deleteEntry(idx){
-  resetInactivityTimer();
-  log.splice(idx,1);
-  allLogs[activeDate]=log;
-  saveAllLogs();
-  if(_gToken&&navigator.onLine) sheetsSave();
-  renderChildren();updateStats();
-  showToast('Timbratura eliminata');
-}
+function deleteEntry(idx){resetInactivityTimer();log.splice(idx,1);saveLog();renderChildren();updateStats();showToast('Timbratura eliminata')}
 
 function goToChildModal(recordcode){
   // Switch to bambini tab and open modal
@@ -649,7 +643,7 @@ function buildSyncPreview(){
     const hasPasti=e.chkColazione||e.chkPranzo||e.chkMerenda||e.chkCena;
     const isWarn=missingOre&&!hasPasti;
     const warnClass=isWarn?'warn':'';
-    const warnIcon=isWarn?'Ã¢ÂÂ  ':missingOre?'Ã¢ÂÂ± ':'';
+    const warnIcon=isWarn?'⚠ ':missingOre?'⏱ ':'';
     const onclick=isWarn?`onclick="goToChildModal('${e.recordcode}')"`:'';
     return `<div class="sync-item ${warnClass}" ${onclick}>
       <div style="flex:1">${warnIcon}${name}</div>
@@ -714,14 +708,8 @@ async function startSync(){
   const username=document.getElementById('syncUser').value.trim(),password=document.getElementById('syncPass').value.trim();
   const btn=document.getElementById('btnSync'),label=document.getElementById('btnSyncLabel');
   if(!username||!password){showStatus('error','Inserisci username e password');return}
-  const dateFrom = document.getElementById('syncDateFrom').value;
-  const dateTo = document.getElementById('syncDateTo').value;
   const unsync=[];
-  Object.keys(allLogs).forEach(date=>{
-    if(dateFrom && date < dateFrom) return;
-    if(dateTo && date > dateTo) return;
-    (allLogs[date]||[]).forEach((e,i)=>{if(!e.synced)unsync.push({entry:e,date,idx:i})});
-  });
+  Object.keys(allLogs).forEach(date=>{(allLogs[date]||[]).forEach((e,i)=>{if(!e.synced)unsync.push({entry:e,date,idx:i})})});
   if(unsync.length===0){showStatus('info','Nessuna presenza da caricare.');return}
   btn.disabled=true;label.innerHTML='<span class="spinner"></span> Connessione...';
   const base=getBaseURL();
@@ -731,7 +719,7 @@ async function startSync(){
   Object.keys(_svcCache).forEach(k=>delete _svcCache[k]);
   try{
     const session=await doLogin(username,password);
-    document.getElementById('sessionInfo').textContent='Sessione: attiva Ã¢ÂÂ';
+    document.getElementById('sessionInfo').textContent='Sessione: attiva ✓';
     showStatus('info','Caricamento '+unsync.length+' presenze...');
     let ok=0,errors=[];
     for(let i=0;i<unsync.length;i++){
@@ -746,8 +734,8 @@ async function startSync(){
         const timeTo=hasOre?toMinutes(entry.timeOut):0;
         const hasPasti=entry.chkColazione||entry.chkPranzo||entry.chkMerenda||entry.chkCena;
 
-        // Salta se non c'ÃÂ¨ nulla da caricare
-        if(!hasOre&&!hasPasti){ errors.push(child.name+': nessun orario nÃÂ© pasto'); continue; }
+        // Salta se non c'è nulla da caricare
+        if(!hasOre&&!hasPasti){ errors.push(child.name+': nessun orario né pasto'); continue; }
 
         const base={recordcode:'',itemRecordcode:child.contract,appCode:1,correction:false,
           description1:'',description2:'',firmCode:FIRM_CODE,language:LANG,notes:'',
@@ -780,7 +768,7 @@ async function startSync(){
       }catch(e){errors.push((child?child.name:entry.recordcode)+': '+e.message)}
     }
     saveAllLogs();renderChildren();updateStats();buildSyncPreview();
-    if(errors.length===0)showStatus('success','Ã¢ÂÂ '+ok+' presenza/e caricate!');
+    if(errors.length===0)showStatus('success','✓ '+ok+' presenza/e caricate!');
     else showStatus('error',ok+' ok, '+errors.length+' errori: '+errors.join(' | '));
   }catch(e){showStatus('error','Errore: '+e.message)}
   btn.disabled=false;label.textContent='Carica sul portale AFDS';
@@ -801,475 +789,77 @@ function exportCSV(){
   a.download='presenze_'+activeDate+'.csv';a.click();showToast('CSV esportato');
 }
 
-/* GOOGLE SHEETS SYNC Ã¢ÂÂ PKCE flow */
-const G_CLIENT_ID = '532821945699-od1p552eth41rccaf8urnlcp4ie2te10.apps.googleusercontent.com';
-const G_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-const G_REDIRECT = 'https://mammadiurna-app.github.io/app/';
-let _gToken = null;
-let _gRefresh = null;
-let _gSheetId = null;
+/* LICENSE CHECK */
+const LICENSE_CHECK_KEY = 'lic_check_date';
 
-// PKCE helpers
-async function pkceChallenge() {
-  const verifier = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-  const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-  return { verifier, challenge };
-}
+async function checkLicense(username) {
+  if (!username) return;
+  // Una volta al giorno
+  const today = todayStr();
+  if (localStorage.getItem(LICENSE_CHECK_KEY) === today) return;
 
-async function driveLogin() {
-  const { verifier, challenge } = await pkceChallenge();
-  localStorage.setItem('pkce_verifier', verifier);
-  const params = new URLSearchParams({
-    client_id: G_CLIENT_ID,
-    redirect_uri: G_REDIRECT,
-    response_type: 'code',
-    scope: G_SCOPE,
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
-    access_type: 'offline',
-    prompt: 'consent'
-  });
-  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
-}
-
-async function handleOAuthRedirect() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  // Pulisci subito l'URL dai parametri OAuth Ã¢ÂÂ non aspettare
-  if (code || params.get('iss')) {
-    history.replaceState(null, '', window.location.pathname);
-  }
-  if (!code) {
-    // Try to restore saved token
-    const saved = localStorage.getItem('g_token');
-    const sheetId = localStorage.getItem('g_sheet_id');
-    if (saved) {
-      _gToken = saved;
-      _gSheetId = sheetId || null;
-      updateDriveUI(true);
-      sheetsInit();
-    }
-    return;
-  }
-  // Exchange code for token via worker
-  history.replaceState(null, '', G_REDIRECT);
-  const verifier = localStorage.getItem('pkce_verifier');
-  localStorage.removeItem('pkce_verifier');
   const s = getSettings();
-  const proxyBase = (s.proxyUrl||'').trim().replace(/\/+$/,'');
-  console.log('Token exchange Ã¢ÂÂ proxyBase:', proxyBase, 'verifier:', verifier ? verifier.slice(0,10)+'...' : 'NULL');
-  const base = proxyBase;
+  const proxyBase = (s.proxyUrl||'').trim().replace(/\/+$/, '');
+  if (!proxyBase) return;
+
   try {
-    const resp = await fetch(base + '/auth/token', {
+    const resp = await fetch(proxyBase + '/auth/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, code_verifier: verifier, redirect_uri: G_REDIRECT })
+      body: JSON.stringify({ username })
     });
-    console.log('Token exchange Ã¢ÂÂ HTTP status:', resp.status);
     const data = await resp.json();
-    console.log('Token exchange Ã¢ÂÂ response keys:', Object.keys(data), 'error:', data.error, 'error_description:', data.error_description);
-    if (data.access_token) {
-      _gToken = data.access_token;
-      _gRefresh = data.refresh_token;
-      localStorage.setItem('g_token', _gToken);
-      if (_gRefresh) localStorage.setItem('g_refresh', _gRefresh);
-      updateDriveUI(true);
-      showToast('Connesso a Google');
-      await sheetsInit();
-    } else {
-      showToast('Errore login: ' + (data.error||'') + ' ' + (data.error_description||''));
-    }
+    localStorage.setItem(LICENSE_CHECK_KEY, today);
+    showLicPopup(data);
   } catch(e) {
-    console.error('Token exchange exception:', e);
-    showToast('Errore connessione: ' + e.message);
+    console.log('License check failed:', e.message);
   }
 }
 
-function driveLogout() {
-  // Pulisce tutto tranne impostazioni
-  const settings = localStorage.getItem('afds_settings');
-  localStorage.clear();
-  sessionStorage.clear();
-  if (settings) localStorage.setItem('afds_settings', settings);
-  // Redirect con flag logout Ã¢ÂÂ impedisce il ripristino del token
-  window.location.href = window.location.pathname + '?logout=1';
-}
-// Forza ricerca/creazione foglio
-async function sheetsReinit() {
-  _gSheetId = null;
-  localStorage.removeItem('g_sheet_id');
-  showToast('Ricreazione foglio...');
-  await sheetsInit();
-}
+function showLicPopup(data) {
+  if (data.status === 'ok') return; // Tutto bene, niente popup
 
-function updateDriveUI(connected) {
-  const status = document.getElementById('driveStatus');
-  const btnLogin = document.getElementById('btnDriveLogin');
-  const btnLogout = document.getElementById('btnDriveLogout');
-  const btnSync = document.getElementById('btnDriveSync');
-  if (!status) return;
-  if (connected) {
-    status.textContent = 'Connesso a Google Sheets';
-    status.style.color = 'var(--accent)';
-    btnLogin.style.display = 'none';
-    btnLogout.style.display = 'block';
-    btnSync.style.display = 'block';
-    const btnReinit = document.getElementById('btnDriveReinit');
-    if (btnReinit) btnReinit.style.display = 'block';
-  } else {
-    status.textContent = 'Non connesso';
-    status.style.color = 'var(--text3)';
-    btnLogin.style.display = 'block';
-    btnLogout.style.display = 'none';
-    btnSync.style.display = 'none';
-    const btnReinit2 = document.getElementById('btnDriveReinit');
-    if (btnReinit2) btnReinit2.style.display = 'none';
+  const overlay = document.getElementById('licOverlay');
+  const icon = document.getElementById('licIcon');
+  const title = document.getElementById('licTitle');
+  const msg = document.getElementById('licMsg');
+  const btn = document.getElementById('licBtn');
+
+  if (data.status === 'expiring') {
+    icon.textContent = '📅';
+    title.textContent = 'Rinnovo in scadenza';
+    msg.textContent = data.message || 'La licenza sta per scadere.';
+    btn.className = 'lic-btn warn';
+    btn.textContent = 'OK, continua';
+    btn.onclick = closeLicPopup;
+  } else if (data.status === 'grace') {
+    icon.textContent = '⏳';
+    title.textContent = 'Periodo di tolleranza';
+    msg.textContent = (data.message || '') + '\nContatta Mamma Diurna App per rinnovare.';
+    btn.className = 'lic-btn warn';
+    btn.textContent = 'OK, continua';
+    btn.onclick = closeLicPopup;
+  } else if (data.status === 'blocked') {
+    icon.textContent = '🔒';
+    title.textContent = 'Licenza scaduta';
+    msg.textContent = 'La licenza è scaduta. Contatta Mamma Diurna App per rinnovare.';
+    btn.className = 'lic-btn block';
+    btn.textContent = 'App bloccata';
+    btn.onclick = null;
+    // Blocca navigazione
+    document.querySelectorAll('.nav-btn').forEach(b => b.style.pointerEvents = 'none');
+    document.getElementById('childrenList').style.opacity = '0.3';
+    document.getElementById('childrenList').style.pointerEvents = 'none';
   }
+  overlay.classList.add('open');
 }
 
-async function gFetch(url, opts={}) {
-  if (!_gToken) return null;
-  const resp = await fetch(url, {
-    ...opts,
-    headers: { 'Authorization': 'Bearer ' + _gToken, ...(opts.headers||{}) }
-  });
-  if (resp.status === 401) { driveLogout(); return null; }
-  return resp;
+function closeLicPopup() {
+  document.getElementById('licOverlay').classList.remove('open');
 }
-
-async function sheetsInit() {
-  // Cerca foglio esistente o ne crea uno nuovo
-  const name = 'Mamma Diurna - Timbrature';
-  // Cerca
-  const search = await gFetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${name}' and mimeType='application/vnd.google-apps.spreadsheet'&fields=files(id,name)`
-  );
-  if (!search) return;
-  const data = await search.json();
-  if (data.files && data.files.length > 0) {
-    _gSheetId = data.files[0].id;
-  } else {
-    // Crea nuovo foglio
-    const create = await gFetch('https://sheets.googleapis.com/v4/spreadsheets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        properties: { title: name },
-        sheets: [{ properties: { title: 'Timbrature' } }]
-      })
-    });
-    if (!create) return;
-    const sheet = await create.json();
-    _gSheetId = sheet.spreadsheetId;
-    // Intestazioni
-    await sheetsWrite([['Data','Bambino','Entrata','Uscita','Malattia 50%','Pattuite non usufruite','Colazione','Pranzo','Merenda','Cena','Sincronizzato']]);
-  }
-  localStorage.setItem('g_sheet_id', _gSheetId);
-  showToast('Foglio creato: ' + _gSheetId.slice(0,8) + '...');
-  await sheetsLoad();
-}
-
-async function sheetsWrite(rows, append=true) {
-  if (!_gSheetId) return;
-  const url = append
-    ? `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:I1000:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`
-    : `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:I1000?valueInputOption=RAW`;
-  const method = append ? 'POST' : 'PUT';
-  await gFetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ values: rows })
-  });
-}
-
-async function sheetsLoad() {
-  if (!_gSheetId) return;
-  const resp = await gFetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A2:K1000`
-  );
-  if (!resp) return;
-  const data = await resp.json();
-  const rows = data.values || [];
-
-  // Ricostruisci allLogs dal foglio Ã¢ÂÂ il foglio comanda
-  const fromSheet = {};
-  rows.forEach(r => {
-    const [date,nome,tIn,tOut,mal,pat,col,pra,mer,cen,updatedAt] = r;
-    if (!date || !nome) return;
-    const child = CHILDREN.find(c => (c.lastname+' '+c.name) === nome);
-    if (!child) return;
-    if (!fromSheet[date]) fromSheet[date] = [];
-    fromSheet[date].push({
-      recordcode: child.recordcode,
-      ts: updatedAt || (date+'T'+(tIn||'00:00')+':00'),
-      updatedAt: updatedAt || '',
-      timeIn: tIn||'', timeOut: tOut||'',
-      chkMalattia: mal==='Si', chkPattuite: pat==='Si',
-      chkColazione: col==='Si', chkPranzo: pra==='Si',
-      chkMerenda: mer==='Si', chkCena: cen==='Si',
-      synced: true
-    });
-  });
-
-  // Bootstrap: se foglio vuoto e ci sono dati locali, scrivi locali sul foglio
-  const sheetIsEmpty = Object.keys(fromSheet).length === 0;
-  const hasLocalData = Object.values(allLogs).some(d => d.length > 0);
-  if (sheetIsEmpty && hasLocalData) {
-    console.log('Bootstrap: scrivo dati locali sul foglio');
-    await sheetsSave();
-    // Marca tutto come synced
-    Object.values(allLogs).forEach(entries =>
-      entries.forEach(e => { e.synced = true; })
-    );
-    saveAllLogs();
-    log = allLogs[activeDate] || [];
-    renderChildren(); updateStats();
-    return;
-  }
-
-  // Foglio ha dati Ã¢ÂÂ sostituisce tutto il locale (foglio comanda)
-  // Ma mantieni le timbrature pending (synced:false) dal locale
-  const pending = [];
-  Object.keys(allLogs).forEach(date => {
-    (allLogs[date]||[]).forEach(e => {
-      if (!e.synced) pending.push({...e, date});
-    });
-  });
-
-  // Parti dal foglio
-  allLogs = fromSheet;
-
-  // Re-aggiungi pending che non sono giÃÂ  sul foglio (dedup per data+bambino+entrata)
-  pending.forEach(p => {
-    const dayRows = allLogs[p.date] || [];
-    const exists = dayRows.some(r =>
-      r.recordcode === p.recordcode && r.timeIn === p.timeIn
-    );
-    if (!exists) {
-      if (!allLogs[p.date]) allLogs[p.date] = [];
-      allLogs[p.date].push(p);
-    }
-  });
-
-  saveAllLogs();
-  log = allLogs[activeDate] || [];
-  renderChildren(); updateStats();
-}
-
-async function sheetsSave() {
-  if (!_gSheetId || !_gToken) return;
-  const now = new Date().toISOString();
-  const rows = [['Data','Bambino','Entrata','Uscita','Malattia 50%','Pattuite non usufruite','Colazione','Pranzo','Merenda','Cena','Aggiornato']];
-  const allRows = [];
-  Object.keys(allLogs).sort().forEach(date => {
-    (allLogs[date]||[]).forEach(e => {
-      if (!e.synced) return; // Non scrivere pending Ã¢ÂÂ restano grigi finchÃÂ© offline
-      const child = CHILDREN.find(c => c.recordcode === e.recordcode);
-      const nome = child ? child.lastname+' '+child.name : e.recordcode;
-      allRows.push({ date, timeIn: e.timeIn||'', row: [
-        date, nome, e.timeIn||'', e.timeOut||'',
-        e.chkMalattia?'Si':'', e.chkPattuite?'Si':'',
-        e.chkColazione?'Si':'', e.chkPranzo?'Si':'',
-        e.chkMerenda?'Si':'', e.chkCena?'Si':'',
-        e.updatedAt || now
-      ]});
-    });
-  });
-  allRows.sort((a,b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return (a.timeIn||'').localeCompare(b.timeIn||'');
-  });
-  allRows.forEach(r => rows.push(r.row));
-  // Prima svuota tutto il foglio (fino a riga 1000), poi riscrivi
-  await gFetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:K1000:clear`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
-  );
-  await gFetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${_gSheetId}/values/Timbrature!A1:K${rows.length}?valueInputOption=RAW`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: rows })
-    }
-  );
-}
-
-async function driveSyncNow() {
-  showToast('Sincronizzazione...');
-  if (!_gSheetId) {
-    await sheetsInit();
-  } else {
-    await sheetsLoad();
-  }
-  showToast('Sincronizzato con Google Sheets');
-}
-
-function driveLogout() {
-  _gToken = null;
-  
-  updateDriveUI(false);
-}
-
-function updateDriveUI(connected) {
-  const status = document.getElementById('driveStatus');
-  const btnLogin = document.getElementById('btnDriveLogin');
-  const btnLogout = document.getElementById('btnDriveLogout');
-  const btnSync = document.getElementById('btnDriveSync');
-  if (!status) return;
-  if (connected) {
-    status.textContent = 'Connesso Ã¢ÂÂ Ã¢ÂÂ dati sincronizzati su Drive';
-    status.style.color = 'var(--accent)';
-    btnLogin.style.display = 'none';
-    btnLogout.style.display = 'block';
-    btnSync.style.display = 'block';
-    const btnReinit = document.getElementById('btnDriveReinit');
-    if (btnReinit) btnReinit.style.display = 'block';
-  } else {
-    status.textContent = 'Non connesso';
-    status.style.color = 'var(--text3)';
-    btnLogin.style.display = 'block';
-    btnLogout.style.display = 'none';
-    btnSync.style.display = 'none';
-    const btnReinit2 = document.getElementById('btnDriveReinit');
-    if (btnReinit2) btnReinit2.style.display = 'none';
-  }
-}
-
-async function driveFetch(url, opts={}) {
-  if (!_gToken) return null;
-  const resp = await fetch(url, {
-    ...opts,
-    headers: { 'Authorization': 'Bearer ' + _gToken, ...(opts.headers||{}) }
-  });
-  if (resp.status === 401) { driveLogout(); return null; }
-  return resp;
-}
-
-async function driveSyncNow() {
-  showToast('Sincronizzazione...');
-  if (!_gSheetId) {
-    await sheetsInit();
-  } else {
-    await sheetsLoad();
-  }
-  showToast('Sincronizzato con Google Sheets');
-}
-
-function driveLogout() {
-  _gToken = null;
-  
-  updateDriveUI(false);
-}
-
-function updateDriveUI(connected) {
-  const status = document.getElementById('driveStatus');
-  const btnLogin = document.getElementById('btnDriveLogin');
-  const btnLogout = document.getElementById('btnDriveLogout');
-  const btnSync = document.getElementById('btnDriveSync');
-  if (!status) return;
-  if (connected) {
-    status.textContent = 'Connesso Ã¢ÂÂ Ã¢ÂÂ dati sincronizzati su Drive';
-    status.style.color = 'var(--accent)';
-    btnLogin.style.display = 'none';
-    btnLogout.style.display = 'block';
-    btnSync.style.display = 'block';
-    const btnReinit = document.getElementById('btnDriveReinit');
-    if (btnReinit) btnReinit.style.display = 'block';
-  } else {
-    status.textContent = 'Non connesso';
-    status.style.color = 'var(--text3)';
-    btnLogin.style.display = 'block';
-    btnLogout.style.display = 'none';
-    btnSync.style.display = 'none';
-    const btnReinit2 = document.getElementById('btnDriveReinit');
-    if (btnReinit2) btnReinit2.style.display = 'none';
-  }
-}
-
-async function driveFetch(url, opts={}) {
-  if (!_gToken) return null;
-  const resp = await fetch(url, {
-    ...opts,
-    headers: { 'Authorization': 'Bearer ' + _gToken, ...(opts.headers||{}) }
-  });
-  if (resp.status === 401) { driveLogout(); return null; }
-  return resp;
-}
-
-
-// Hook: saveLog Ã¢ÂÂ Sheets comanda, localStorage ÃÂ¨ cache offline
-function saveLog() {
-  allLogs[activeDate] = log;
-  saveAllLogs();
-  if (_gToken && navigator.onLine) {
-    // Marca tutto il giorno come synced prima di scrivere
-    (allLogs[activeDate]||[]).forEach(e => {
-      e.synced = true;
-      e.updatedAt = new Date().toISOString();
-    });
-    saveAllLogs();
-    sheetsSave();
-  }
-  // Se offline, le timbrature restano synced:false (grigie)
-  renderChildren(); // aggiorna colori
-}
-
-// Quando torna online, scrivi le pending sul foglio
-window.addEventListener('online', async () => {
-  if (!_gToken || !_gSheetId) return;
-  const pending = [];
-  Object.keys(allLogs).forEach(date => {
-    (allLogs[date]||[]).forEach(e => { if (!e.synced) pending.push({e, date}); });
-  });
-  if (pending.length === 0) return;
-  showToast('Connesso Ã¢ÂÂ carico ' + pending.length + ' timbrature in sospeso...');
-  // Carica foglio corrente
-  await sheetsLoad();
-  // Le pending sono state re-integrate in sheetsLoad, ora le marco synced e salvo
-  Object.keys(allLogs).forEach(date => {
-    (allLogs[date]||[]).forEach(e => {
-      if (!e.synced) { e.synced = true; e.updatedAt = new Date().toISOString(); }
-    });
-  });
-  saveAllLogs();
-  await sheetsSave();
-  log = allLogs[activeDate] || [];
-  renderChildren(); updateStats();
-  showToast('Timbrature sincronizzate');
-});
 
 /* INIT */
 loadSettings();
-// Default date range = mese corrente
-(function(){
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth()+1).padStart(2,'0');
-  const lastDay = new Date(y, now.getMonth()+1, 0).getDate();
-  const from = document.getElementById('syncDateFrom');
-  const to = document.getElementById('syncDateTo');
-  if(from) from.value = y+'-'+m+'-01';
-  if(to) to.value = y+'-'+m+'-'+String(lastDay).padStart(2,'0');
-})();
-handleOAuthRedirect().then(()=>{
-  // Se non connesso dopo il tentativo di ripristino, mostra impostazioni
-  if (!_gToken) {
-    // Nascondi tutto tranne settings
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('page-settings').classList.add('active');
-    document.querySelectorAll('.nav-btn')[2].classList.add('active');
-    // Focus sul bottone login
-    setTimeout(()=>{
-      const btn = document.getElementById('btnDriveLogin');
-      if(btn){ btn.scrollIntoView({behavior:'smooth'}); btn.style.animation='pulse 1s infinite'; }
-    }, 300);
-  }
-});
 updateDateDisplay();
 renderChildren();
 updateStats();
