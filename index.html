@@ -359,7 +359,7 @@ async function fetchChildren(session){
   const d=await apiCall('GetCareActivePersonContracts',{
     firmCode:FIRM_CODE,language:LANG,supervisorRecordcode:SUPERVISOR,session
   });
-  console.log('GetCareActivePersonContracts raw:',JSON.stringify(d).slice(0,500));
+  alert('DEBUG GetCareActivePersonContracts:\n'+JSON.stringify(d).slice(0,600));
   const children=parseChildren(d);
   if(children.length>0){
     CHILDREN=children;
