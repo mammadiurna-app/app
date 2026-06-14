@@ -357,7 +357,10 @@ function parseChildren(data){
 }
 async function fetchChildren(session){
   const d=await apiCall('GetCareActivePersonContracts',{
-    firmCode:FIRM_CODE,language:LANG,supervisorRecordcode:SUPERVISOR,session
+    firmCode:FIRM_CODE,language:LANG,
+    getCareActivePersonContractsFilterType:1,
+    date:new Date().toISOString().slice(0,10)+'T00:00:00.000Z',
+    session
   });
   alert('DEBUG GetCareActivePersonContracts:\n'+JSON.stringify(d).slice(0,600));
   const children=parseChildren(d);
