@@ -357,15 +357,13 @@ function parseChildren(data){
 }
 async function fetchChildren(session){
   // Recupera familyRecordcode dall'utente loggato
-  // Mostra risposta login per debug
-  alert('DEBUG login keys:\n'+Object.keys(JSON.parse(localStorage.getItem('afds_debug_login')||'{}')).join(', ')+'\n\n'+localStorage.getItem('afds_debug_login').slice(0,400));
   let supervisorRecordcode=localStorage.getItem('afds_family_rc')||'';
   try{
-    const pref=await apiCall('GetUserFirmPreference',{session});
-    const rc=(pref.careFirmData&&pref.careFirmData.familyRecordcode)||(pref.careUserFirmData&&pref.careUserFirmData.familyRecordcode)||'';
+    const s=getSettings();
+    const pref=await apiCall('GetUserFirmPreference',{language:LANG,firmCode:FIRM_CODE,username:s.afdsUser});
+    const rc=(pref.careUserFirmData&&pref.careUserFirmData.familyRecordcode)||(pref.careFirmData&&pref.careFirmData.familyRecordcode)||'';
     if(rc){supervisorRecordcode=rc;localStorage.setItem('afds_family_rc',rc);}
-    alert('DEBUG GetUserFirmPreference:\nfamilyRecordcode='+rc+'\nChiavi: '+Object.keys(pref).join(', '));
-  }catch(e){alert('GetUserFirmPreference errore: '+e.message);}
+  }catch(e){console.log('GetUserFirmPreference:',e.message);}
   if(!supervisorRecordcode) throw new Error('familyRecordcode non trovato');
   const d=await apiCall('GetCareActivePersonContracts',{
     firmCode:FIRM_CODE,language:LANG,
@@ -800,7 +798,6 @@ let _accessToken = '';
 let _session = '';
 async function doLogin(u,p){
   const d=await apiCall('WebLoginJwt',{username:u,password:p});
-  localStorage.setItem('afds_debug_login',JSON.stringify(d).slice(0,1200));
   const session=(d.userSession&&d.userSession.session)||d.session;
   if(!session)throw new Error('Login fallito - risposta: '+JSON.stringify(d).slice(0,200));
   _accessToken=(d.accessToken&&d.accessToken.tokenValue)||(d.accessToken&&d.accessToken.token)||'';
