@@ -186,7 +186,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div class="timeout-bar" id="timeoutBar"><div class="timeout-bar-fill" id="timeoutFill"></div></div>
 </div>
-<div class="past-banner" id="pastBanner">Stai visualizzando una data passata — tocca la data per tornare ad oggi</div>
+<div class="past-banner" id="pastBanner">Stai visualizzando una data diversa da oggi — tocca la data per tornare ad oggi</div>
 
 <nav class="nav">
   <button class="nav-btn active" onclick="showPage('bambini',this)">Bambini <span class="nav-badge" id="logBadge">0</span></button>
@@ -255,9 +255,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <input class="field-input" id="settingName" type="text" placeholder="es. Altieri" oninput="saveSettings()">
     </div>
   </div>
-  <div style="font-size:12px;color:var(--text3);padding:0 4px">Dopo il timeout, la data torna automaticamente ad oggi se hai selezionato un giorno passato.</div>
-  <div style="margin-top:16px">
+  <div style="margin-top:16px;display:flex;gap:10px">
     <button class="btn-primary" id="btnSaveSettings" onclick="saveAndGo()">Salva impostazioni</button>
+    <button class="btn-secondary" style="margin-top:0;white-space:nowrap" onclick="resetDefaults()">↺ Ripristina</button>
   </div>
   <div id="settingsSaved" style="display:none;text-align:center;padding:12px;font-size:14px;color:var(--accent)">✓ Impostazioni salvate</div>
 </div>
@@ -522,6 +522,11 @@ async function openModal(rc,entryIdx){
       licData=await resp.json();
     }catch(e){console.log('License check failed:',e.message);}
     localStorage.setItem('lic_status',licData.status);
+    // Controlla limite inferiore: data selezionata prima dell'inizio copertura
+    if(licData.dataInizio&&activeDate<licData.dataInizio){
+      showLicPopup({status:'before',dataInizio:licData.dataInizio},null);
+      return;
+    }
     if(licData.status==='blocked'){
       // allowedUntil: ultima data coperta dalla licenza inclusa la grace period
       const withinLicense=licData.allowedUntil&&activeDate<=licData.allowedUntil;
@@ -861,6 +866,12 @@ function exportCSV(){
 /* LICENSE CHECK */
 const LICENSE_CHECK_KEY = 'lic_check_date';
 
+function resetDefaults() {
+  document.getElementById('settingTimeout').value = 180;
+  document.getElementById('settingRound').value = 6;
+  saveSettings();
+  showToast('Impostazioni ripristinate ai default');
+}
 function saveAndGo() {
   if (!checkRequiredFields()) {
     showToast('Inserisci username e password AFDS');
@@ -928,7 +939,18 @@ function showLicPopup(data, onContinue) {
   const msg = document.getElementById('licMsg');
   const btn = document.getElementById('licBtn');
 
-  if (data.status === 'expiring') {
+  if (data.status === 'before') {
+    const d = new Date(data.dataInizio + 'T12:00:00');
+    const fmtInizio = d.toLocaleDateString('it-IT', {day:'numeric', month:'long', year:'numeric'});
+    icon.textContent = '🔒';
+    title.textContent = 'Data non coperta';
+    msg.textContent = `Questo giorno non è coperto dalla licenza. Il periodo valido inizia il ${fmtInizio}.`;
+    btn.className = 'lic-btn block';
+    btn.textContent = 'Periodo non coperto';
+    btn.onclick = null;
+    overlay.classList.add('open');
+    return;
+  } else if (data.status === 'expiring') {
     icon.textContent = '📅';
     title.textContent = 'Rinnovo in scadenza';
     msg.textContent = data.message || 'La licenza sta per scadere.';

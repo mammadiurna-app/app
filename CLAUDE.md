@@ -47,6 +47,7 @@ Il check avviene ad ogni click su un bambino (`openModal` in `index.html`).
 | Stato | Comportamento |
 |-------|--------------|
 | Nessuna credenziale | Toast + redirect a Impostazioni, modale bloccata |
+| `activeDate < dataInizio` | Popup bloccante "Data non coperta", modale non si apre |
 | `ok` | Modale si apre, nessun popup |
 | `expiring` / `grace` | Popup una volta per giorno di calendario (`activeDate`), poi modale si apre |
 | `blocked` + data ≤ `allowedUntil` | Popup informativo, modale si apre (date coperte dalla licenza inclusa grace) |
@@ -64,7 +65,7 @@ Foglio: `Foglio1`, colonne A2:E100
 | Colonna | Contenuto |
 |---------|-----------|
 | A | Username (es. `l.altieri`) |
-| B | (non usata nel check) |
+| B | Data inizio (formato `YYYY-MM-DD`) — prima data coperta dalla licenza |
 | C | Data scadenza (formato `YYYY-MM-DD`) |
 | D | Attiva (`si` / `no`) |
 
