@@ -370,7 +370,6 @@ async function fetchChildren(session){
     supervisorRecordcode,
     date:new Date().toISOString()
   });
-  alert('DEBUG GetCareActivePersonContracts:\n'+JSON.stringify(d).slice(0,600));
   const children=parseChildren(d);
   if(children.length>0){
     CHILDREN=children;
