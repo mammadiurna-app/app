@@ -273,6 +273,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button class="btn-reset" onclick="resetField('settingTimeout',180)" title="Ripristina default">↺</button>
         </div>
       </div>
+      <div style="padding-top:12px">
+        <button class="btn-secondary" style="margin-top:0" onclick="reloadChildrenFromPortal(this)">↻ Ricarica lista bambini</button>
+      </div>
     </div>
   </div>
   <div style="margin-top:16px">
@@ -334,34 +337,9 @@ const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 function getBaseURL(){return PROXY_URL+'/api'}
 const FIRM_CODE='AFDS',SUPERVISOR='00000162',LANG=1;
 
-/* Lista hardcoded come bootstrap: usata se la cache è vuota o il fetch fallisce */
-const CHILDREN_FALLBACK=[
-  {recordcode:'00000706',name:'Dragica',lastname:'Krstic',gender:2,contract:'00030628'},
-  {recordcode:'00000713',name:'Stefan',lastname:'Lazarevic',gender:1,contract:'00030630'},
-  {recordcode:'00001473',name:'Mia',lastname:'Gajovic',gender:2,contract:'00030624'},
-  {recordcode:'00001474',name:'Teodor',lastname:'Gajovic',gender:1,contract:'00030625'},
-  {recordcode:'00001499',name:'Fiamma',lastname:'Antonietti',gender:2,contract:'00030584'},
-  {recordcode:'00001504',name:'Alizée',lastname:'Comolli',gender:2,contract:'00030622'},
-  {recordcode:'00002369',name:'Tina',lastname:'Djokic',gender:2,contract:'00030623'},
-  {recordcode:'00002492',name:'Dunja',lastname:'Krstic',gender:2,contract:'00030629'},
-  {recordcode:'00003001',name:'Aria',lastname:'Antonietti',gender:2,contract:'00030585'},
-  {recordcode:'00003005',name:'Enea',lastname:'Giobbi',gender:1,contract:'00030626'},
-  {recordcode:'00003006',name:'Emma',lastname:'Giobbi',gender:2,contract:'00030627'},
-  {recordcode:'00003966',name:'Sofia',lastname:'Maddalenda',gender:2,contract:'00030632'},
-  {recordcode:'00004162',name:'Luca',lastname:'Bordeianu',gender:1,contract:'00030586'},
-  {recordcode:'00004704',name:'Nicole',lastname:'Terzaghi',gender:2,contract:'00030635'},
-  {recordcode:'00004793',name:'Romeo',lastname:'Lombardo',gender:1,contract:'00030631'},
-  {recordcode:'00004800',name:'Ethan',lastname:'Pasci',gender:1,contract:'00030633'},
-  {recordcode:'00004801',name:'Ronnie',lastname:'Pasci',gender:1,contract:'00030634'},
-  {recordcode:'00005245',name:'Melania Margharet',lastname:'Palu',gender:2,contract:'00031608'},
-  {recordcode:'00005270',name:'Joshua Mael',lastname:'Morganella',gender:1,contract:'00031893'},
-  {recordcode:'00005544',name:'Lukas',lastname:'Obetta',gender:1,contract:'00036201'},
-];
 function loadCachedChildren(){
-  const raw=localStorage.getItem('afds_children');
-  if(raw===null) return CHILDREN_FALLBACK; // mai sincronizzato: usa lista hardcoded
-  try{return JSON.parse(raw)||[];}         // [] = credenziali errate → lista vuota
-  catch(e){return CHILDREN_FALLBACK;}
+  try{return JSON.parse(localStorage.getItem('afds_children')||'[]')||[];}
+  catch(e){return[];}
 }
 function parseChildren(data){
   const list=data.activePersonContractList||data.personContractList||data.contractList||data.itemList||[];
@@ -386,9 +364,23 @@ async function fetchChildren(session){
   if(children.length>0){
     CHILDREN=children;
     localStorage.setItem('afds_children',JSON.stringify(children));
+    localStorage.setItem('afds_children_date',todayStr());
     renderChildren();updateStats();
   }
   return children;
+}
+async function reloadChildrenFromPortal(btn){
+  const s=getSettings();
+  if(!s.afdsUser||!s.afdsPwd){showToast('Prima salva le credenziali');return;}
+  const orig=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';}
+  try{
+    _accessToken='';
+    const session=await doLogin(s.afdsUser,s.afdsPwd);
+    const children=await fetchChildren(session);
+    showToast(children.length>0?children.length+' bambini caricati':'Nessun bambino trovato sul portale');
+  }catch(e){showToast('Errore: '+e.message);}
+  finally{if(btn){btn.disabled=false;btn.innerHTML=orig;}}
 }
 let CHILDREN=loadCachedChildren();
 
@@ -685,7 +677,7 @@ function saveModal(){
 function renderChildren(){
   const list=document.getElementById('childrenList');
   if(CHILDREN.length===0){
-    list.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--text3);font-size:14px;line-height:1.8">Nessun bambino caricato.<br>Verifica le credenziali nelle <b>Impostazioni</b>.</div>';
+    list.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--text3);font-size:14px;line-height:1.8">Nessun bambino caricato.<br>Salva le credenziali nelle <b>Impostazioni</b><br>o usa <b>↻ Ricarica lista bambini</b>.</div>';
     return;
   }
   const sorted=[...CHILDREN].sort((a,b)=>{
@@ -1095,6 +1087,14 @@ loadSettings();
     }
     localStorage.setItem('app_ver',v);
   }catch(e){}
+})();
+// Refresh giornaliero automatico della lista bambini
+(async function(){
+  const s=getSettings();
+  if(s.afdsUser&&s.afdsPwd&&localStorage.getItem('afds_children_date')!==todayStr()){
+    try{_accessToken='';const session=await doLogin(s.afdsUser,s.afdsPwd);await fetchChildren(session);}
+    catch(e){console.log('Auto-refresh bambini:',e.message);}
+  }
 })();
 updateDateDisplay();
 renderChildren();
