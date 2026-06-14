@@ -334,7 +334,8 @@ const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 function getBaseURL(){return PROXY_URL+'/api'}
 const FIRM_CODE='AFDS',SUPERVISOR='00000162',LANG=1;
 
-const CHILDREN=[
+/* Lista hardcoded come bootstrap: usata se la cache è vuota o il fetch fallisce */
+const CHILDREN_FALLBACK=[
   {recordcode:'00000706',name:'Dragica',lastname:'Krstic',gender:2,contract:'00030628'},
   {recordcode:'00000713',name:'Stefan',lastname:'Lazarevic',gender:1,contract:'00030630'},
   {recordcode:'00001473',name:'Mia',lastname:'Gajovic',gender:2,contract:'00030624'},
@@ -356,6 +357,40 @@ const CHILDREN=[
   {recordcode:'00005270',name:'Joshua Mael',lastname:'Morganella',gender:1,contract:'00031893'},
   {recordcode:'00005544',name:'Lukas',lastname:'Obetta',gender:1,contract:'00036201'},
 ];
+function loadCachedChildren(){
+  const raw=localStorage.getItem('afds_children');
+  if(raw===null) return CHILDREN_FALLBACK; // mai sincronizzato: usa lista hardcoded
+  try{return JSON.parse(raw)||[];}         // [] = credenziali errate → lista vuota
+  catch(e){return CHILDREN_FALLBACK;}
+}
+function parseChildren(data){
+  const list=data.activePersonContractList||data.personContractList||data.contractList||data.itemList||[];
+  return list.map(item=>{
+    const p=item.person||item;
+    const c=item.contract||item.careContract||item.carePersonContract||{};
+    return{
+      recordcode:String(p.recordcode||p.personRecordcode||''),
+      name:p.name||'',
+      lastname:p.lastname||p.surname||p.familyName||'',
+      gender:Number(p.gender||p.sex||1),
+      contract:String(c.recordcode||item.contractRecordcode||'')
+    };
+  }).filter(c=>c.recordcode&&c.name&&c.contract);
+}
+async function fetchChildren(session){
+  const d=await apiCall('GetCareActivePersonContracts',{
+    firmCode:FIRM_CODE,language:LANG,supervisorRecordcode:SUPERVISOR,session
+  });
+  console.log('GetCareActivePersonContracts raw:',JSON.stringify(d).slice(0,500));
+  const children=parseChildren(d);
+  if(children.length>0){
+    CHILDREN=children;
+    localStorage.setItem('afds_children',JSON.stringify(children));
+    renderChildren();updateStats();
+  }
+  return children;
+}
+let CHILDREN=loadCachedChildren();
 
 /* STATE */
 let activeDate=todayStr();
@@ -649,6 +684,10 @@ function saveModal(){
 /* RENDER */
 function renderChildren(){
   const list=document.getElementById('childrenList');
+  if(CHILDREN.length===0){
+    list.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--text3);font-size:14px;line-height:1.8">Nessun bambino caricato.<br>Verifica le credenziali nelle <b>Impostazioni</b>.</div>';
+    return;
+  }
   const sorted=[...CHILDREN].sort((a,b)=>{
     const eA=getEntriesForChild(a.recordcode);
     const eB=getEntriesForChild(b.recordcode);
@@ -810,9 +849,9 @@ async function startSync(){
   try{
     const session=await doLogin(username,password);
     document.getElementById('sessionInfo').textContent='Sessione: attiva ✓';
-    // Salva username per check all'avvio
     const _s=getSettings(); _s.lastUsername=username; localStorage.setItem('afds_settings',JSON.stringify(_s));
     checkLicense(username);
+    try { await fetchChildren(session); } catch(e) { console.log('fetchChildren:',e.message); }
     showStatus('info','Caricamento '+unsync.length+' presenze...');
     let ok=0,errors=[];
     for(let i=0;i<unsync.length;i++){
@@ -897,20 +936,30 @@ function toggleAdvanced() {
   panel.style.display = open ? 'none' : 'block';
   arrow.textContent = open ? '▾' : '▴';
 }
-function saveAndGo() {
-  if (!checkRequiredFields()) {
-    showToast('Inserisci username e password AFDS');
-    return;
-  }
+async function saveAndGo() {
+  if (!checkRequiredFields()) { showToast('Inserisci username e password AFDS'); return; }
   saveSettings();
-  // Mostra check verde
-  const saved = document.getElementById('settingsSaved');
-  saved.style.display = 'block';
-  setTimeout(() => {
-    saved.style.display = 'none';
-    // Vai ai bambini
-    showPage('bambini', document.querySelectorAll('.nav-btn')[0]);
-  }, 1000);
+  const username=document.getElementById('settingAfdsUser').value.trim();
+  const password=document.getElementById('settingAfdsPwd').value;
+  const btn=document.getElementById('btnSaveSettings');
+  const origLabel=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> Verifica...';
+  try {
+    _accessToken='';
+    const session=await doLogin(username,password);
+    try { await fetchChildren(session); } catch(e) { console.log('fetchChildren:',e.message); }
+    const saved=document.getElementById('settingsSaved');
+    saved.style.display='block';
+    setTimeout(()=>{saved.style.display='none';showPage('bambini',document.querySelectorAll('.nav-btn')[0]);},1200);
+  } catch(e) {
+    localStorage.setItem('afds_children','[]');
+    CHILDREN=[];
+    renderChildren();updateStats();
+    showToast('Credenziali non valide');
+  } finally {
+    btn.disabled=false; btn.innerHTML=origLabel;
+  }
 }
 
 function checkRequiredFields() {
