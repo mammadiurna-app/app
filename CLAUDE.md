@@ -42,20 +42,36 @@ Segreti configurati: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SHEETS_API_KEY
 
 ## Logica licenza
 
-Il check avviene ad ogni click su un bambino (`openModal` in `index.html`).
+### Flusso del check (in ordine)
 
-| Stato | Comportamento |
-|-------|--------------|
-| Nessuna credenziale | Toast + redirect a Impostazioni, modale bloccata |
-| `activeDate < dataInizio` | Popup bloccante "Data non coperta", modale non si apre |
-| `ok` | Modale si apre, nessun popup |
-| `expiring` / `grace` | Popup una volta per giorno di calendario (`activeDate`), poi modale si apre |
-| `blocked` + data ≤ `allowedUntil` | Popup informativo, modale si apre (date coperte dalla licenza inclusa grace) |
-| `blocked` + data > `allowedUntil` | Popup bloccante, modale non si apre |
+Il check avviene ad ogni click su un bambino (`openModal` in `index.html`). I controlli sono eseguiti nell'ordine seguente:
 
-`allowedUntil` è restituito dal worker nella risposta `blocked`: corrisponde a `scadenza + GRACE_DAYS`.
+1. **Nessuna credenziale** → toast + redirect a Impostazioni, modale bloccata (check lato client, senza chiamata al worker)
+2. **Chiamata al worker** `POST /auth/check` con `{ username }` → risposta con `status`, più eventuali `dataInizio`, `allowedUntil`
+3. **`activeDate < dataInizio`** → popup bloccante "Data non coperta", modale non si apre
+4. **`status === 'blocked'`**:
+   - `activeDate ≤ allowedUntil` → popup informativo, modale si apre (la data è coperta dalla grace period)
+   - `activeDate > allowedUntil` → popup bloccante, modale non si apre
+5. **`status === 'expiring'` o `'grace'`** → popup una volta per giorno di calendario (`activeDate`), poi modale si apre
+6. **`status === 'ok'`** → modale si apre senza popup
 
-Il flag "popup già mostrato oggi" è salvato in localStorage con chiave `lic_shown_YYYY-MM-DD` basata sulla **data selezionata nel calendario** (`activeDate`), non sulla data di sistema.
+### Campi restituiti dal worker
+
+| Campo | Presente quando | Significato |
+|-------|----------------|-------------|
+| `status` | sempre | `ok` / `expiring` / `grace` / `blocked` |
+| `dataInizio` | se colonna B compilata | Prima data coperta dalla licenza (`YYYY-MM-DD`) |
+| `allowedUntil` | status `blocked` | Ultima data accessibile = `scadenza + GRACE_DAYS` |
+| `daysLeft` | status `expiring` / `grace` | Giorni rimanenti |
+| `message` | vari | Testo descrittivo per il popup |
+
+### Ragione del limite inferiore (`dataInizio`)
+
+Senza `dataInizio`, un utente che paga luglio potrebbe inserire dati di giugno senza pagare per quel mese. Il check `activeDate < dataInizio` blocca l'accesso a qualsiasi data precedente all'inizio della licenza pagata.
+
+### Flag "popup già mostrato"
+
+Salvato in localStorage con chiave `lic_shown_YYYY-MM-DD` basata sulla **data selezionata nel calendario** (`activeDate`), non sulla data di sistema. Evita che il popup `expiring`/`grace` esca più volte per la stessa data.
 
 ## Foglio licenze (Google Sheets)
 
