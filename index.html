@@ -356,11 +356,19 @@ function parseChildren(data){
   }).filter(c=>c.recordcode&&c.name&&c.contract);
 }
 async function fetchChildren(session){
+  // Recupera familyRecordcode dall'utente loggato
+  let supervisorRecordcode=localStorage.getItem('afds_family_rc')||'';
+  try{
+    const pref=await apiCall('GetUserFirmPreference',{firmCode:FIRM_CODE,language:LANG,session});
+    const rc=(pref.careFirmData&&pref.careFirmData.familyRecordcode)||(pref.careUserFirmData&&pref.careUserFirmData.familyRecordcode)||'';
+    if(rc){supervisorRecordcode=rc;localStorage.setItem('afds_family_rc',rc);}
+    alert('DEBUG GetUserFirmPreference:\nfamilyRecordcode='+rc+'\nChiavi: '+Object.keys(pref).join(', '));
+  }catch(e){alert('GetUserFirmPreference errore: '+e.message);}
+  if(!supervisorRecordcode) throw new Error('familyRecordcode non trovato');
   const d=await apiCall('GetCareActivePersonContracts',{
     firmCode:FIRM_CODE,language:LANG,
-    getCareActivePersonContractsFilterType:1,
-    date:new Date().toISOString().slice(0,10)+'T00:00:00.000Z',
-    session
+    supervisorRecordcode,
+    date:new Date().toISOString()
   });
   alert('DEBUG GetCareActivePersonContracts:\n'+JSON.stringify(d).slice(0,600));
   const children=parseChildren(d);
