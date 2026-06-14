@@ -388,7 +388,10 @@ async function reloadChildrenFromPortal(btn){
     _accessToken='';
     const session=await doLogin(s.afdsUser,s.afdsPwd);
     const children=await fetchChildren(session);
-    showToast(children.length>0?children.length+' bambini caricati':'Nessun bambino trovato sul portale');
+    if(children.length>0){
+      showToast(children.length+' bambini caricati');
+      showPage('bambini',document.querySelectorAll('.nav-btn')[0]);
+    }else{showToast('Nessun bambino trovato sul portale');}
   }catch(e){showToast('Errore: '+e.message);}
   finally{if(btn){btn.disabled=false;btn.innerHTML=orig;}}
 }
