@@ -33,36 +33,30 @@ async function checkLicenza(username, sheetsApiKey) {
       return { status: 'grace', daysLeft: GRACE_DAYS, message: `Periodo di prova: ${GRACE_DAYS} giorni rimanenti` };
     }
 
-    const attiva = (row[3]||'').toLowerCase() === 'si';
-    if (!attiva) {
-      let allowedUntil = null;
-      if (row[2]) {
-        const d = new Date(row[2]); d.setDate(d.getDate() + GRACE_DAYS);
-        allowedUntil = d.toISOString().slice(0, 10);
-      }
-      return { status: 'blocked', message: 'Licenza disattivata. Contatta Mamma Diurna App.', ...(allowedUntil ? { allowedUntil } : {}) };
-    }
-
-    const scadenza = new Date(row[2]);
+    // row[1]=Nome (ignorato), row[2]=Data avvio, row[3]=Data scadenza, row[4]=Note (ignorato)
+    const dataInizio = (row[2] || '').trim() || null;
+    const scadenza = new Date(row[3]);
     scadenza.setHours(0,0,0,0);
     const diffDays = Math.ceil((scadenza - today) / (1000*60*60*24));
 
     if (diffDays < -GRACE_DAYS) {
       const graceEnd = new Date(scadenza); graceEnd.setDate(graceEnd.getDate() + GRACE_DAYS);
       const allowedUntil = graceEnd.toISOString().slice(0, 10);
-      return { status: 'blocked', message: 'Licenza scaduta. Contatta Mamma Diurna App.', allowedUntil };
+      return { status: 'blocked', message: 'Licenza scaduta. Contatta Mamma Diurna App.', allowedUntil, ...(dataInizio ? { dataInizio } : {}) };
     }
     if (diffDays < 0) return {
       status: 'grace',
       daysLeft: GRACE_DAYS + diffDays,
-      message: `Licenza scaduta il ${formatDate(scadenza)} — ${GRACE_DAYS + diffDays} giorni di tolleranza`
+      message: `Licenza scaduta il ${formatDate(scadenza)} — ${GRACE_DAYS + diffDays} giorni di tolleranza`,
+      ...(dataInizio ? { dataInizio } : {})
     };
     if (diffDays <= WARN_DAYS) return {
       status: 'expiring',
       daysLeft: diffDays,
-      message: `Scade ${formatDate(scadenza)}`
+      message: `Scade ${formatDate(scadenza)}`,
+      ...(dataInizio ? { dataInizio } : {})
     };
-    return { status: 'ok', scadenza: row[2] };
+    return { status: 'ok', scadenza: row[3], ...(dataInizio ? { dataInizio } : {}) };
 
   } catch(e) {
     return { status: 'ok', message: 'Check non disponibile: ' + e.message };
@@ -84,8 +78,8 @@ export default {
       return cors(new Response(JSON.stringify({
         status: 'ok',
         service: 'AFDS Worker',
-        version: '2.3.0',
-        buildDate: '2026-06-13',
+        version: '2.5.0',
+        buildDate: '2026-06-14',
         features: ['afds-proxy', 'pkce-oauth', 'licenze-api-key']
       }), { headers: { 'Content-Type': 'application/json' } }));
     }

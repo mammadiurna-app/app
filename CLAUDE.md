@@ -84,9 +84,10 @@ Foglio: `Foglio1`, colonne A2:E100
 | Colonna | Contenuto |
 |---------|-----------|
 | A | Username (es. `l.altieri`) |
-| B | Data inizio (formato `YYYY-MM-DD`) — prima data coperta dalla licenza |
-| C | Data scadenza (formato `YYYY-MM-DD`) |
-| D | Attiva (`si` / `no`) |
+| B | Nome completo (es. `Liliana Altieri`) — non usato nel check |
+| C | Data avvio (formato `YYYY-MM-DD`) — prima data coperta dalla licenza |
+| D | Data scadenza (formato `YYYY-MM-DD`) |
+| E | Note — non usato nel check |
 
 Costanti nel worker: `GRACE_DAYS = 3`, `WARN_DAYS = 10`.
 
