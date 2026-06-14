@@ -159,6 +159,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:24px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:320px}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.btn-reset{background:#f97316;border:none;border-radius:6px;width:34px;height:34px;color:white;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-reset:active{background:#ea6c0a}
+.settings-accordion{width:100%;background:none;border:none;border-top:1px solid var(--border);padding:10px 0 0;text-align:left;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:10px}
+.settings-accordion:hover{color:var(--text)}
 </style>
 </head>
 <body>
@@ -185,6 +189,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
   <div class="timeout-bar" id="timeoutBar"><div class="timeout-bar-fill" id="timeoutFill"></div></div>
+</div>
+<div id="updateBanner" style="display:none;background:var(--accent);color:white;font-size:13px;font-weight:500;text-align:center;padding:7px 16px;display:none;align-items:center;justify-content:center;gap:12px">
+  Nuova versione disponibile
+  <button onclick="window.location.replace(location.origin+location.pathname+'?upd='+Date.now())" style="background:white;color:var(--accent);border:none;border-radius:12px;padding:4px 14px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer">Aggiorna</button>
 </div>
 <div class="past-banner" id="pastBanner">Stai visualizzando una data diversa da oggi — tocca la data per tornare ad oggi</div>
 
@@ -243,21 +251,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <input class="field-input" id="settingAfdsPwd" type="password" autocomplete="current-password" placeholder="password" oninput="saveSettings();checkRequiredFields()">
     </div>
     <div class="field-row">
-      <div class="field-label">Arrotondamento minuti (soglia)</div>
-      <input class="field-input" id="settingRound" type="number" min="1" max="14" value="6" oninput="saveSettings()">
-    </div>
-    <div class="field-row">
-      <div class="field-label">Timeout rientro a oggi (secondi)</div>
-      <input class="field-input" id="settingTimeout" type="number" min="30" max="3600" value="180" oninput="saveSettings()">
-    </div>
-    <div class="field-row">
       <div class="field-label">Nome mamma diurna</div>
       <input class="field-input" id="settingName" type="text" placeholder="es. Altieri" oninput="saveSettings()">
     </div>
+
+    <button class="settings-accordion" onclick="toggleAdvanced()">
+      <span id="advancedArrow">▾</span>&nbsp;Altre impostazioni
+    </button>
+    <div id="advancedSettings" style="display:none;padding-top:8px">
+      <div class="field-row">
+        <div class="field-label">Arrotondamento minuti (soglia)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="field-input" id="settingRound" type="number" min="1" max="14" value="6" oninput="saveSettings()">
+          <button class="btn-reset" onclick="resetField('settingRound',6)" title="Ripristina default">↺</button>
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:0">
+        <div class="field-label">Timeout rientro a oggi (secondi)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="field-input" id="settingTimeout" type="number" min="30" max="3600" value="180" oninput="saveSettings()">
+          <button class="btn-reset" onclick="resetField('settingTimeout',180)" title="Ripristina default">↺</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div style="margin-top:16px;display:flex;gap:10px">
+  <div style="margin-top:16px">
     <button class="btn-primary" id="btnSaveSettings" onclick="saveAndGo()">Salva impostazioni</button>
-    <button class="btn-secondary" style="margin-top:0;white-space:nowrap" onclick="resetDefaults()">↺ Ripristina</button>
   </div>
   <div id="settingsSaved" style="display:none;text-align:center;padding:12px;font-size:14px;color:var(--accent)">✓ Impostazioni salvate</div>
 </div>
@@ -866,11 +885,17 @@ function exportCSV(){
 /* LICENSE CHECK */
 const LICENSE_CHECK_KEY = 'lic_check_date';
 
-function resetDefaults() {
-  document.getElementById('settingTimeout').value = 180;
-  document.getElementById('settingRound').value = 6;
+function resetField(id, val) {
+  document.getElementById(id).value = val;
   saveSettings();
-  showToast('Impostazioni ripristinate ai default');
+  showToast('Ripristinato');
+}
+function toggleAdvanced() {
+  const panel = document.getElementById('advancedSettings');
+  const arrow = document.getElementById('advancedArrow');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▾' : '▴';
 }
 function saveAndGo() {
   if (!checkRequiredFields()) {
@@ -1009,6 +1034,18 @@ loadSettings();
       showToast('Inserisci username e password AFDS per iniziare');
     }, 300);
   }
+})();
+(async function checkAppVersion(){
+  try{
+    const r=await fetch('./version.json?t='+Date.now());
+    const {v}=await r.json();
+    const known=localStorage.getItem('app_ver');
+    if(known&&known!==v){
+      const b=document.getElementById('updateBanner');
+      b.style.display='flex';
+    }
+    localStorage.setItem('app_ver',v);
+  }catch(e){}
 })();
 updateDateDisplay();
 renderChildren();
