@@ -1053,10 +1053,10 @@ function showLicPopup(data, onContinue) {
       btn.textContent = 'OK, continua';
       btn.onclick = () => { closeLicPopup(); onContinue(); };
     } else {
-      // Data odierna: bloccante
+      // Data odierna: bloccante (ma chiudibile)
       btn.className = 'lic-btn block';
-      btn.textContent = 'App bloccata';
-      btn.onclick = null;
+      btn.textContent = 'Chiudi';
+      btn.onclick = () => closeLicPopup();
     }
   }
   overlay.classList.add('open');
