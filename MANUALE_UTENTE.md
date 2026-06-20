@@ -266,6 +266,8 @@ IBAN CH86 8035 0000 0093 5857 9 — intestato a Giovanni Ugo Altieri
 
 Indica nel messaggio il tuo **nome utente AFDS** e il numero di mesi che desideri ricaricare.
 
+La ricarica è attiva a partire dal giorno successivo al ricevimento del pagamento.
+
 ### Contatto
 
 **Giovanni Ugo Altieri**
