@@ -221,6 +221,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <input type="hidden" id="syncUser">
   <input type="hidden" id="syncPass">
   <div class="status-msg" id="syncStatus"></div>
+  <div class="sync-card">
+    <h3>Periodo da caricare</h3>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <div class="field-label">Dal</div>
+        <input type="date" class="field-input" id="syncDateFrom" onchange="buildSyncPreview()">
+      </div>
+      <div style="flex:1">
+        <div class="field-label">Al</div>
+        <input type="date" class="field-input" id="syncDateTo" onchange="buildSyncPreview()">
+      </div>
+    </div>
+  </div>
   <div class="sync-card" id="syncPreview" style="display:none">
     <h3>Riepilogo da caricare</h3>
     <p id="syncPreviewText"></p>
@@ -763,8 +776,13 @@ function showPage(name,btn){
   if(name==='sync'){buildSyncPreview()}
 }
 function buildSyncPreview(){
+  const today=todayStr();
+  const fromEl=document.getElementById('syncDateFrom'),toEl=document.getElementById('syncDateTo');
+  if(!fromEl.value) fromEl.value=today;
+  if(!toEl.value) toEl.value=today;
+  const from=fromEl.value,to=toEl.value;
   const all=[];
-  Object.keys(allLogs).forEach(date=>{(allLogs[date]||[]).filter(e=>!e.synced).forEach(e=>all.push({...e,date}))});
+  Object.keys(allLogs).forEach(date=>{if(date>=from&&date<=to)(allLogs[date]||[]).filter(e=>!e.synced).forEach(e=>all.push({...e,date}))});
   const preview=document.getElementById('syncPreview');
   if(all.length===0){preview.style.display='none';return}
   preview.style.display='block';
@@ -842,8 +860,10 @@ async function startSync(){
   const username=document.getElementById('syncUser').value.trim(),password=document.getElementById('syncPass').value.trim();
   const btn=document.getElementById('btnSync'),label=document.getElementById('btnSyncLabel');
   if(!username||!password){showStatus('error','Inserisci username e password');return}
+  const from=document.getElementById('syncDateFrom').value||todayStr();
+  const to=document.getElementById('syncDateTo').value||todayStr();
   const unsync=[];
-  Object.keys(allLogs).forEach(date=>{(allLogs[date]||[]).forEach((e,i)=>{if(!e.synced)unsync.push({entry:e,date,idx:i})})});
+  Object.keys(allLogs).forEach(date=>{if(date>=from&&date<=to)(allLogs[date]||[]).forEach((e,i)=>{if(!e.synced)unsync.push({entry:e,date,idx:i})})});
   if(unsync.length===0){showStatus('info','Nessuna presenza da caricare.');return}
   btn.disabled=true;label.innerHTML='<span class="spinner"></span> Connessione...';
   const base=getBaseURL();
