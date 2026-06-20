@@ -156,6 +156,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .lic-btn.ok{background:var(--accent);color:white}
 .lic-btn.warn{background:var(--warn);color:white}
 .lic-btn.block{background:var(--danger);color:white;cursor:default}
+.lic-reload{background:var(--accent);color:white;margin-top:8px}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:320px}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -357,6 +358,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="lic-title" id="licTitle">Verifica licenza</div>
     <div class="lic-msg" id="licMsg">Controllo in corso...</div>
     <button class="lic-btn" id="licBtn" onclick="closeLicPopup()">OK, continua</button>
+    <button class="lic-btn lic-reload" id="licReloadBtn" onclick="window.location.href='ricarica.html'" style="display:none">Ricarica licenza</button>
   </div>
 </div>
 
@@ -1097,6 +1099,9 @@ function showLicPopup(data, onContinue) {
   const title = document.getElementById('licTitle');
   const msg = document.getElementById('licMsg');
   const btn = document.getElementById('licBtn');
+  const reloadBtn = document.getElementById('licReloadBtn');
+
+  reloadBtn.style.display = 'none';
 
   if (data.status === 'before') {
     const d = new Date(data.dataInizio + 'T12:00:00');
@@ -1116,19 +1121,22 @@ function showLicPopup(data, onContinue) {
     btn.className = 'lic-btn warn';
     btn.textContent = 'OK, continua';
     btn.onclick = () => { closeLicPopup(); if(onContinue) onContinue(); };
+    reloadBtn.style.display = 'block';
   } else if (data.status === 'grace') {
     icon.textContent = '⏳';
     title.textContent = 'Periodo di tolleranza';
-    msg.textContent = (data.message || '') + '\nContatta Mamma Diurna App per rinnovare.';
+    msg.textContent = (data.message || '') + '\nRicarica la licenza per continuare ad usare l\'app.';
     btn.className = 'lic-btn warn';
     btn.textContent = 'OK, continua';
     btn.onclick = () => { closeLicPopup(); if(onContinue) onContinue(); };
+    reloadBtn.style.display = 'block';
   } else if (data.status === 'blocked') {
     icon.textContent = '🔒';
     title.textContent = 'Licenza scaduta';
-    msg.textContent = 'La licenza è scaduta. Contatta Mamma Diurna App per rinnovare.';
+    msg.textContent = 'La licenza è scaduta. Ricarica la licenza per continuare ad usare l\'app.';
+    reloadBtn.style.display = 'block';
     if (onContinue) {
-      // Data passata: popup informativo, poi continua
+      // Data passata: avviso informativo, poi continua
       btn.className = 'lic-btn warn';
       btn.textContent = 'OK, continua';
       btn.onclick = () => { closeLicPopup(); onContinue(); };
