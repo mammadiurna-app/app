@@ -163,6 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-reset:active{background:#ea6c0a}
 .settings-accordion{width:100%;background:none;border:none;border-top:1px solid var(--border);padding:10px 0 0;text-align:left;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:10px}
 .settings-accordion:hover{color:var(--text)}
+.stats-month-sel{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:15px;background:var(--bg);color:var(--text);outline:none;margin-bottom:18px}
 </style>
 </head>
 <body>
@@ -206,7 +207,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="stats-row">
     <div class="stat-pill"><div class="stat-num green" id="statPresenti">0</div><div class="stat-lbl">presenti</div></div>
     <div class="stat-pill"><div class="stat-num red" id="statTimb">0</div><div class="stat-lbl">timbrature</div></div>
-    <div class="stat-pill"><div class="stat-num" id="statOre">0:00</div><div class="stat-lbl">ore totali</div></div>
+    <div class="stat-pill" onclick="openStatsOverlay()" style="cursor:pointer"><div class="stat-num" id="statOre">0:00</div><div class="stat-lbl">ore totali ↗</div></div>
   </div>
   <div id="childrenList"></div>
 </div>
@@ -333,6 +334,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Stats overlay -->
+<div class="modal-overlay" id="statsOverlay" onclick="if(event.target===this)closeStatsOverlay()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Statistiche mensili</div>
+      <button class="modal-close" onclick="closeStatsOverlay()">✕</button>
+    </div>
+    <div class="modal-body" style="padding-bottom:28px">
+      <select class="stats-month-sel" id="statsMonth" onchange="renderStatsOverlay()"></select>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+</div>
 
 <!-- License popup -->
 <div class="lic-overlay" id="licOverlay">
@@ -759,6 +775,50 @@ function updateStats(){
   if(el) el.textContent=h+':'+String(m).padStart(2,'0');
 }
 function deleteEntry(idx){resetInactivityTimer();log.splice(idx,1);saveLog();renderChildren();updateStats();showToast('Timbratura eliminata')}
+
+function openStatsOverlay(){
+  const sel=document.getElementById('statsMonth');
+  if(!sel.options.length){
+    const now=new Date();
+    for(let i=0;i<24;i++){
+      const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      const val=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      const label=d.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+      sel.add(new Option(label.charAt(0).toUpperCase()+label.slice(1),val));
+    }
+  }
+  renderStatsOverlay();
+  document.getElementById('statsOverlay').classList.add('open');
+}
+function closeStatsOverlay(){document.getElementById('statsOverlay').classList.remove('open')}
+function renderStatsOverlay(){
+  const month=document.getElementById('statsMonth').value;
+  let totalMins=0,malMins=0,pattMins=0,col=0,pra=0,mer=0,cen=0;
+  Object.keys(allLogs).forEach(date=>{
+    if(!date.startsWith(month))return;
+    (allLogs[date]||[]).forEach(e=>{
+      if(e.timeIn&&e.timeOut){
+        const d=toMinutes(e.timeOut)-toMinutes(e.timeIn);
+        if(d>0){totalMins+=d;if(e.chkMalattia)malMins+=d;if(e.chkPattuite)pattMins+=d;}
+      }
+      if(e.chkColazione)col++;if(e.chkPranzo)pra++;if(e.chkMerenda)mer++;if(e.chkCena)cen++;
+    });
+  });
+  function fh(m){return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')}
+  document.getElementById('statsContent').innerHTML=`
+    <div class="stats-row">
+      <div class="stat-pill"><div class="stat-num">${fh(totalMins)}</div><div class="stat-lbl">ore totali</div></div>
+      <div class="stat-pill"><div class="stat-num red">${fh(malMins)}</div><div class="stat-lbl">ore malattia</div></div>
+      <div class="stat-pill"><div class="stat-num">${fh(pattMins)}</div><div class="stat-lbl">ore non usufruite</div></div>
+    </div>
+    <div class="section-label">Pasti</div>
+    <div class="stats-row">
+      <div class="stat-pill"><div class="stat-num">${col}</div><div class="stat-lbl">colazioni</div></div>
+      <div class="stat-pill"><div class="stat-num">${pra}</div><div class="stat-lbl">pranzi</div></div>
+      <div class="stat-pill"><div class="stat-num">${mer}</div><div class="stat-lbl">merende</div></div>
+      <div class="stat-pill"><div class="stat-num">${cen}</div><div class="stat-lbl">cene</div></div>
+    </div>`;
+}
 
 function goToChildModal(recordcode){
   // Switch to bambini tab and open modal
