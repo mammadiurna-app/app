@@ -31,8 +31,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 /* DATE PILL + CUSTOM CALENDAR */
 .date-pill-wrap{position:relative}
-.date-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 8px 4px 10px;cursor:pointer;user-select:none;border:none;color:white;font-family:'DM Sans',sans-serif}
+.date-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 8px 4px 10px;cursor:pointer;user-select:none;border:none;color:white;font-family:'DM Sans',sans-serif;transition:background .2s}
 .date-pill:hover{background:rgba(255,255,255,0.25)}
+.date-pill.past{background:#d97706;color:white}
+.date-pill.past:hover{background:#b45309}
 .date-pill-text{font-family:'DM Mono',monospace;font-size:13px;opacity:.95;white-space:nowrap}
 .date-pill-icon{font-size:13px;opacity:.8}
 
@@ -579,6 +581,7 @@ function updateDateDisplay(){
   const isToday=activeDate===todayStr();
   const d=new Date(activeDate+'T12:00:00');
   document.getElementById('headerDate').textContent=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+  document.querySelector('.date-pill').classList.toggle('past',!isToday);
   document.getElementById('pastBanner').classList.toggle('show',!isToday);
 }
 function returnToToday(){
