@@ -244,7 +244,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div id="syncItemList"></div>
   </div>
   <button class="btn-primary" id="btnSync" onclick="startSync()"><span id="btnSyncLabel">Carica sul portale AFDS</span></button>
-  <button class="btn-secondary" onclick="exportCSV()">Esporta CSV (backup)</button>
+  <button class="btn-secondary" onclick="exportXLS()">Esporta XLS</button>
   <div class="divider"></div>
   <div class="section-label">Info sessione</div>
   <div style="font-size:12px;color:var(--text3);line-height:1.8">
@@ -364,6 +364,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
+<script src="xlsx-js-style.min.js"></script>
 <script>
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
@@ -1011,19 +1012,125 @@ async function startSync(){
   btn.disabled=false;label.textContent='Carica sul portale AFDS';
 }
 function showStatus(type,msg){const el=document.getElementById('syncStatus');el.className='status-msg show '+type;el.textContent=msg}
-function exportCSV(){
-  const lines=['Data,Cognome,Nome,Entrata,Uscita,Pattuite,Malattia,Colazione,Pranzo,Merenda,Cena,Sincronizzato'];
-  Object.keys(allLogs).sort().forEach(date=>{
-    (allLogs[date]||[]).forEach(e=>{
-      const c=CHILDREN.find(x=>x.recordcode===e.recordcode);
-      lines.push([date,c?c.lastname:'',c?c.name:e.recordcode,e.timeIn||'',e.timeOut||'',
-        e.chkPattuite?'Si':'',e.chkMalattia?'Si':'',e.chkColazione?'Si':'',
-        e.chkPranzo?'Si':'',e.chkMerenda?'Si':'',e.chkCena?'Si':'',e.synced?'Si':'No'].join(','));
+const GIORNI_SETT=['dom','lun','mar','mer','gio','ven','sab'];
+function fmtHeaderData(d){
+  const dt=new Date(d+'T12:00:00');
+  return GIORNI_SETT[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0');
+}
+function fmtDataIt(d){const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+y}
+function minutiTra(tIn,tOut){
+  const[hi,mi]=tIn.split(':').map(Number),[ho,mo]=tOut.split(':').map(Number);
+  return(ho*60+mo)-(hi*60+mi);
+}
+function fmtOreMin(min){
+  return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');
+}
+function exportXLS(){
+  const from=document.getElementById('syncDateFrom').value;
+  const to=document.getElementById('syncDateTo').value;
+  if(!from||!to){showToast('Seleziona il periodo Dal/Al da esportare');return}
+  const dates=Object.keys(allLogs).filter(d=>d>=from&&d<=to&&(allLogs[d]||[]).length).sort();
+  if(!dates.length){showToast('Nessuna presenza nel periodo selezionato');return}
+
+  const byDateChild={};
+  const childSet=new Set();
+  dates.forEach(d=>{
+    byDateChild[d]={};
+    (allLogs[d]||[]).forEach(e=>{
+      if(!e.timeIn||!e.timeOut)return;
+      (byDateChild[d][e.recordcode]=byDateChild[d][e.recordcode]||[]).push(e);
+      childSet.add(e.recordcode);
     });
   });
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'}));
-  a.download='presenze_'+activeDate+'.csv';a.click();showToast('CSV esportato');
+  if(!childSet.size){showToast('Nessuna presenza con orari nel periodo selezionato');return}
+
+  let maxSessioni=2;
+  dates.forEach(d=>Object.values(byDateChild[d]).forEach(arr=>{if(arr.length>maxSessioni)maxSessioni=arr.length}));
+  const blockWidth=maxSessioni*2;
+
+  const children=CHILDREN.filter(c=>childSet.has(c.recordcode))
+    .sort((a,b)=>(a.lastname+a.name).localeCompare(b.lastname+b.name,'it'));
+
+  const startCol=1; // colonna B (0-indexed)
+  const totCol=startCol+dates.length*blockWidth;
+  const nRows=5+children.length+2; // riga1..4 + bambini + riga vuota + totale
+
+  const ws={};
+  const center={alignment:{horizontal:'center',vertical:'center'}};
+  const boldCenter={font:{bold:true},alignment:{horizontal:'center',vertical:'center'}};
+  const titleStyle={font:{bold:true,size:14},alignment:{horizontal:'center',vertical:'center'}};
+  const thin={style:'thin'};
+  const boxCenter={alignment:{horizontal:'center',vertical:'center'},border:{top:thin,bottom:thin,left:thin,right:thin}};
+  const boxBoldCenter={font:{bold:true},alignment:{horizontal:'center',vertical:'center'},border:{top:thin,bottom:thin,left:thin,right:thin}};
+
+  function setCell(r,c,v,s){
+    ws[XLSX.utils.encode_cell({r,c})]={v:v==null?'':v,t:typeof v==='number'?'n':'s',s};
+  }
+
+  const s=getSettings();
+  const nomeMamma=s.name||s.afdsUser||'';
+
+  // Riga 1 (r=0): A1:C1 nome mamma diurna
+  setCell(0,0,nomeMamma,titleStyle);
+  const merges=[{s:{r:0,c:0},e:{r:0,c:2}}];
+
+  // Riga 2 (r=1): Presenze dal / al
+  setCell(1,0,'Presenze dal',boldCenter);
+  setCell(1,1,fmtDataIt(from),center);
+  setCell(1,2,'al',boldCenter);
+  setCell(1,3,fmtDataIt(to),center);
+
+  // Riga 3 (r=2): vuota
+
+  // Riga 4 (r=3): intestazioni date + totale
+  dates.forEach((d,i)=>{
+    const c0=startCol+i*blockWidth;
+    setCell(3,c0,fmtHeaderData(d),boxBoldCenter);
+    for(let k=1;k<blockWidth;k++)setCell(3,c0+k,'',boxBoldCenter);
+    merges.push({s:{r:3,c:c0},e:{r:3,c:c0+blockWidth-1}});
+  });
+  setCell(3,totCol,'Totale ore',boxBoldCenter);
+
+  // Righe bambini
+  const totaliColonna=[];
+  children.forEach((child,idx)=>{
+    const r=4+idx;
+    setCell(r,0,child.lastname+' '+child.name,boxCenter);
+    let totaleMin=0;
+    dates.forEach((d,i)=>{
+      const c0=startCol+i*blockWidth;
+      const sessioni=byDateChild[d][child.recordcode]||[];
+      for(let k=0;k<maxSessioni;k++){
+        const e=sessioni[k];
+        if(e){
+          setCell(r,c0+k*2,e.timeIn,boxCenter);
+          setCell(r,c0+k*2+1,e.timeOut,boxCenter);
+          totaleMin+=minutiTra(e.timeIn,e.timeOut);
+        }else{
+          setCell(r,c0+k*2,'',boxCenter);
+          setCell(r,c0+k*2+1,'',boxCenter);
+        }
+      }
+    });
+    setCell(r,totCol,fmtOreMin(totaleMin),boxCenter);
+    totaliColonna.push(totaleMin);
+  });
+
+  // Riga vuota + riga totale finale
+  const rTotale=4+children.length+1;
+  const sommaMin=totaliColonna.reduce((a,b)=>a+b,0);
+  setCell(rTotale,0,'Totale',boldCenter);
+  setCell(rTotale,totCol,fmtOreMin(sommaMin),boldCenter);
+
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rTotale,c:totCol}});
+  ws['!merges']=merges;
+  ws['!cols']=[{wch:22}];
+  for(let c=1;c<=totCol;c++)ws['!cols'].push({wch:9});
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Presenze');
+  XLSX.writeFile(wb,'presenze_'+from+'_'+to+'.xlsx');
+  showToast('XLS esportato');
 }
 
 /* LICENSE CHECK */
