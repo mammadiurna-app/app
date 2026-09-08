@@ -1157,12 +1157,13 @@ async function exportXLS(){
     if(!can){
       alert('DEBUG: canShare({files}) = false. blob.type='+blob.type);
     }else{
+      const ua=navigator.userActivation?('isActive='+navigator.userActivation.isActive+' hasBeenActive='+navigator.userActivation.hasBeenActive):'userActivation n/a';
       try{
         await navigator.share({files:[file],title:'Presenze '+from+' - '+to});
         shared=true;
       }catch(e){
         if(e.name==='AbortError'){showToast('Condivisione annullata');return}
-        alert('DEBUG errore share: '+e.name+': '+e.message);
+        alert('DEBUG errore share: '+e.name+': '+e.message+'\n'+ua+'\nUA: '+navigator.userAgent);
       }
     }
   }
