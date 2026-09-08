@@ -19,10 +19,10 @@ PWA per la gestione delle presenze bambini nel portale AFDS (Associazione Famigl
 - Repo: `github.com/mammadiurna-app/app` — branch `master`
 - Push su `master` → GitHub Pages si aggiorna automaticamente
 
-**Prima di ogni push**, aggiorna `version.json` con una stringa univoca (es. `2026-06-14-2` per il secondo deploy del giorno). L'app installata mostrerà un banner "Nuova versione disponibile" e si aggiorna al tocco.
+**Prima di ogni push**, aggiorna **sia** `version.json` **sia** la costante `APP_VERSION` in `index.html` (stessa stringa, es. `2026-06-14-2` per il secondo deploy del giorno) — l'app confronta il codice in esecuzione (`APP_VERSION`) con l'ultima pubblicata (`version.json`), non un flag salvato, quindi se disallineate il banner "Nuova versione disponibile" può comparire in loop anche a codice già aggiornato. L'app installata mostrerà il banner e si aggiorna al tocco.
 
 ```bash
-# Aggiorna version.json, poi:
+# Aggiorna version.json e APP_VERSION in index.html, poi:
 git push
 ```
 

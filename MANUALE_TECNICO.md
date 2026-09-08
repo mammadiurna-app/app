@@ -56,7 +56,6 @@ Tutto lo stato applicativo vive in `localStorage` del browser, non su un server.
 | `lic_status` | ultimo stato licenza noto (`ok`/`expiring`/`grace`/`blocked`) |
 | `lic_shown_YYYY-MM-DD` | flag "popup licenza già mostrato" per quella data selezionata (vedi §2.5) |
 | `lic_check_date` | data dell'ultimo popup licenza mostrato all'avvio app |
-| `app_ver` | ultima versione app nota, per il banner di aggiornamento |
 
 Una singola voce di `afds_all_logs[data]` (un "turno") ha questa forma:
 
@@ -117,8 +116,9 @@ Solo i turni con `synced:false` nel periodo selezionato vengono effettivamente i
 ### 2.6 PWA e aggiornamenti
 
 - `manifest.json` definisce icone, `start_url`, modalità `standalone`
-- Nessun service worker: l'app si affida al banner di aggiornamento manuale. Ad ogni avvio, `checkAppVersion()` legge `version.json` (con cache-busting `?t=timestamp`) e confronta con `app_ver` salvato; se diverso, mostra il banner "Nuova versione disponibile" che forza un reload con querystring nuova
-- **Per questo va aggiornato `version.json` ad ogni deploy** (vedi CLAUDE.md e §6)
+- Nessun service worker: l'app si affida al banner di aggiornamento manuale. Ad ogni avvio, `checkAppVersion()` legge `version.json` (con cache-busting `?t=timestamp`) e lo confronta con la costante `APP_VERSION` scritta nel codice stesso (non con un flag salvato in `localStorage`): se diversi, mostra il banner "Nuova versione disponibile". Il confronto diretto codice-in-esecuzione vs. ultima pubblicata è deliberato — una versione precedente confrontava con un flag persistito in `localStorage`, ma se anche una sola volta il flag veniva scritto senza che il reload fosse realmente andato a buon fine (es. una cache intermedia che continuava a servire la pagina vecchia), il flag restava disallineato per sempre e il banner non spariva più nemmeno a upgrade avvenuto. Con `APP_VERSION` non c'è stato persistito da poter disallineare: o il codice in esecuzione corrisponde all'ultima pubblicata, o no.
+- Il pulsante "Aggiorna" del banner (`forceUpdate()`) fa prima un `fetch(location.pathname,{cache:'reload'})` per forzare il bypass della cache HTTP del browser, poi ricarica con una querystring nuova — necessario perché la sola querystring di cache-busting su una navigazione normale può essere ignorata da cache intermedie (CDN/proxy) che non la usano come chiave di cache.
+- **Per questo va aggiornata sia `APP_VERSION` in `index.html` sia `version.json` ad ogni deploy** (vedi CLAUDE.md e §6) — se disallineate, il banner "Nuova versione disponibile" compare in loop anche a codice aggiornato (o non compare mai).
 
 ---
 

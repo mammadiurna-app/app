@@ -369,6 +369,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script src="xlsx-js-style.min.js"></script>
 <script>
+const APP_VERSION = '2026-09-08-9'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -1355,22 +1356,16 @@ async function forceUpdate(btn){
 }
 (async function checkAppVersion(){
   const lbl=document.getElementById('appVersionLabel');
+  if(lbl)lbl.textContent=APP_VERSION;
   try{
     const r=await fetch('./version.json?t='+Date.now());
     const {v}=await r.json();
-    const known=localStorage.getItem('app_ver');
-    if(known&&known!==v){
-      const b=document.getElementById('updateBanner');
-      b.style.display='flex';
-      // non salva app_ver qui: il banner deve ripresentarsi ad ogni avvio
-      // finché l'utente non tocca "Aggiorna" (vedi onclick sul banner)
-    }else{
-      localStorage.setItem('app_ver',v);
+    // Confronto diretto codice-in-esecuzione vs ultima pubblicata: niente flag
+    // salvato che può disallinearsi e restare bloccato (bug precedente).
+    if(v&&v!==APP_VERSION){
+      document.getElementById('updateBanner').style.display='flex';
     }
-    if(lbl)lbl.textContent=v;
-  }catch(e){
-    if(lbl)lbl.textContent=localStorage.getItem('app_ver')||'n/d';
-  }
+  }catch(e){}
 })();
 // Refresh giornaliero automatico della lista bambini
 (async function(){
