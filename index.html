@@ -114,7 +114,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .sync-item:last-child{border-bottom:none}
 .sync-item.warn{background:var(--danger-light);margin:0 -18px;padding:8px 18px;cursor:pointer}
 .sync-item.warn:active{opacity:.8}
+.sync-item.synced{opacity:.5}
 .sync-result{margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.sync-warn-banner{background:var(--warn-light);color:var(--warn);border:1px solid rgba(180,83,9,.2);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;margin-bottom:10px}
 .divider{height:1px;background:var(--border);margin:14px 0}
 
 /* MODAL */
@@ -863,20 +865,23 @@ function buildSyncPreview(){
   if(!toEl.value) toEl.value=today;
   const from=fromEl.value,to=toEl.value;
   const all=[];
-  Object.keys(allLogs).forEach(date=>{if(date>=from&&date<=to)(allLogs[date]||[]).filter(e=>!e.synced).forEach(e=>all.push({...e,date}))});
+  Object.keys(allLogs).forEach(date=>{if(date>=from&&date<=to)(allLogs[date]||[]).forEach(e=>all.push({...e,date}))});
   const preview=document.getElementById('syncPreview');
   if(all.length===0){preview.style.display='none';return}
   preview.style.display='block';
-  document.getElementById('syncPreviewText').textContent=all.length+' presenze da caricare';
-  document.getElementById('syncItemList').innerHTML=all.map(e=>{
+  const syncedCount=all.filter(e=>e.synced).length;
+  const daCaricare=all.length-syncedCount;
+  document.getElementById('syncPreviewText').textContent=daCaricare+' da caricare'+(syncedCount?', '+syncedCount+' già caricata/e':'');
+  const banner=syncedCount?`<div class="sync-warn-banner">⚠ ${syncedCount} presenza/e in questo periodo ${syncedCount===1?'è già stata caricata':'sono già state caricate'} sul portale (in grigio sotto) e non verranno riproposte. Per correggerle, cancellale prima dal portale AFDS.</div>`:'';
+  document.getElementById('syncItemList').innerHTML=banner+all.map(e=>{
     const child=CHILDREN.find(c=>c.recordcode===e.recordcode);
     const name=child?child.lastname+' '+child.name:e.recordcode;
     const times=[e.timeIn,e.timeOut].filter(Boolean).join(' -> ');
     const missingOre=!(e.timeIn&&e.timeOut);
     const hasPasti=e.chkColazione||e.chkPranzo||e.chkMerenda||e.chkCena;
-    const isWarn=missingOre&&!hasPasti;
-    const warnClass=isWarn?'warn':'';
-    const warnIcon=isWarn?'⚠ ':missingOre?'⏱ ':'';
+    const isWarn=!e.synced&&missingOre&&!hasPasti;
+    const warnClass=e.synced?'synced':isWarn?'warn':'';
+    const warnIcon=e.synced?'✓ ':isWarn?'⚠ ':missingOre?'⏱ ':'';
     const onclick=isWarn?`onclick="goToChildModal('${e.recordcode}')"`:'';
     return `<div class="sync-item ${warnClass}" ${onclick}>
       <div style="flex:1">${warnIcon}${name}</div>
@@ -944,8 +949,10 @@ async function startSync(){
   const from=document.getElementById('syncDateFrom').value||todayStr();
   const to=document.getElementById('syncDateTo').value||todayStr();
   const unsync=[];
-  Object.keys(allLogs).forEach(date=>{if(date>=from&&date<=to)(allLogs[date]||[]).forEach((e,i)=>{if(!e.synced)unsync.push({entry:e,date,idx:i})})});
+  let giaCaricate=0;
+  Object.keys(allLogs).forEach(date=>{if(date>=from&&date<=to)(allLogs[date]||[]).forEach((e,i)=>{if(!e.synced)unsync.push({entry:e,date,idx:i});else giaCaricate++})});
   if(unsync.length===0){showStatus('info','Nessuna presenza da caricare.');return}
+  if(giaCaricate>0)showToast('⚠ '+giaCaricate+' presenza/e già caricata/e non verranno ripetute (cancellale dal portale per correggerle)');
   btn.disabled=true;label.innerHTML='<span class="spinner"></span> Connessione...';
   const base=getBaseURL();
   showStatus('info','Connessione a: '+base+' ...');
@@ -1029,8 +1036,10 @@ function exportXLS(){
   const from=document.getElementById('syncDateFrom').value;
   const to=document.getElementById('syncDateTo').value;
   if(!from||!to){showToast('Seleziona il periodo Dal/Al da esportare');return}
-  const dates=Object.keys(allLogs).filter(d=>d>=from&&d<=to&&(allLogs[d]||[]).length).sort();
-  if(!dates.length){showToast('Nessuna presenza nel periodo selezionato');return}
+  const dates=[];
+  for(let dt=new Date(from+'T12:00:00'),end=new Date(to+'T12:00:00');dt<=end;dt.setDate(dt.getDate()+1)){
+    dates.push(dt.toISOString().slice(0,10));
+  }
 
   const byDateChild={};
   const childSet=new Set();
@@ -1044,16 +1053,21 @@ function exportXLS(){
   });
   if(!childSet.size){showToast('Nessuna presenza con orari nel periodo selezionato');return}
 
-  let maxSessioni=2;
-  dates.forEach(d=>Object.values(byDateChild[d]).forEach(arr=>{if(arr.length>maxSessioni)maxSessioni=arr.length}));
-  const blockWidth=maxSessioni*2;
+  const sessioniPerData={};
+  dates.forEach(d=>{
+    let m=1;
+    Object.values(byDateChild[d]).forEach(arr=>{if(arr.length>m)m=arr.length});
+    sessioniPerData[d]=m;
+  });
+  const blockWidths=dates.map(d=>sessioniPerData[d]*2);
 
   const children=CHILDREN.filter(c=>childSet.has(c.recordcode))
     .sort((a,b)=>(a.lastname+a.name).localeCompare(b.lastname+b.name,'it'));
 
   const startCol=1; // colonna B (0-indexed)
-  const totCol=startCol+dates.length*blockWidth;
-  const nRows=5+children.length+2; // riga1..4 + bambini + riga vuota + totale
+  const colOffsets=[];
+  let totCol=startCol;
+  dates.forEach((d,i)=>{colOffsets[i]=totCol;totCol+=blockWidths[i]});
 
   const ws={};
   const center={alignment:{horizontal:'center',vertical:'center'}};
@@ -1084,10 +1098,10 @@ function exportXLS(){
 
   // Riga 4 (r=3): intestazioni date + totale
   dates.forEach((d,i)=>{
-    const c0=startCol+i*blockWidth;
+    const c0=colOffsets[i],w=blockWidths[i];
     setCell(3,c0,fmtHeaderData(d),boxBoldCenter);
-    for(let k=1;k<blockWidth;k++)setCell(3,c0+k,'',boxBoldCenter);
-    merges.push({s:{r:3,c:c0},e:{r:3,c:c0+blockWidth-1}});
+    for(let k=1;k<w;k++)setCell(3,c0+k,'',boxBoldCenter);
+    merges.push({s:{r:3,c:c0},e:{r:3,c:c0+w-1}});
   });
   setCell(3,totCol,'Totale ore',boxBoldCenter);
 
@@ -1098,9 +1112,9 @@ function exportXLS(){
     setCell(r,0,child.lastname+' '+child.name,boxCenter);
     let totaleMin=0;
     dates.forEach((d,i)=>{
-      const c0=startCol+i*blockWidth;
+      const c0=colOffsets[i];
       const sessioni=byDateChild[d][child.recordcode]||[];
-      for(let k=0;k<maxSessioni;k++){
+      for(let k=0;k<sessioniPerData[d];k++){
         const e=sessioni[k];
         if(e){
           setCell(r,c0+k*2,e.timeIn,boxCenter);
