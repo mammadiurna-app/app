@@ -1032,7 +1032,7 @@ function minutiTra(tIn,tOut){
 function fmtOreMin(min){
   return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');
 }
-function exportXLS(){
+async function exportXLS(){
   const from=document.getElementById('syncDateFrom').value;
   const to=document.getElementById('syncDateTo').value;
   if(!from||!to){showToast('Seleziona il periodo Dal/Al da esportare');return}
@@ -1143,8 +1143,30 @@ function exportXLS(){
 
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Presenze');
-  XLSX.writeFile(wb,'presenze_'+from+'_'+to+'.xlsx');
-  showToast('XLS esportato');
+  const filename='presenze_'+from+'_'+to+'.xlsx';
+  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+  let shared=false;
+  if(navigator.canShare){
+    const file=new File([blob],filename,{type:blob.type});
+    if(navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({files:[file],title:'Presenze '+from+' - '+to});
+        shared=true;
+      }catch(e){
+        if(e.name==='AbortError'){showToast('Condivisione annullata');return}
+        // altri errori: prosegue con il download come fallback
+      }
+    }
+  }
+  if(!shared){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=filename;a.click();
+    URL.revokeObjectURL(url);
+  }
+  showToast(shared?'XLS condiviso':'XLS esportato');
 }
 
 /* LICENSE CHECK */
