@@ -301,6 +301,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="btn-primary" id="btnSaveSettings" onclick="saveAndGo()">Salva impostazioni</button>
   </div>
   <div id="settingsSaved" style="display:none;text-align:center;padding:12px;font-size:14px;color:var(--accent)">✓ Impostazioni salvate</div>
+  <div style="text-align:center;padding-top:8px;font-size:12px;color:var(--text3)">Versione app: <span id="appVersionLabel">—</span></div>
 </div>
 
 <!-- Modal timbratura -->
@@ -1339,6 +1340,7 @@ loadSettings();
   }
 })();
 (async function checkAppVersion(){
+  const lbl=document.getElementById('appVersionLabel');
   try{
     const r=await fetch('./version.json?t='+Date.now());
     const {v}=await r.json();
@@ -1348,7 +1350,10 @@ loadSettings();
       b.style.display='flex';
     }
     localStorage.setItem('app_ver',v);
-  }catch(e){}
+    if(lbl)lbl.textContent=v;
+  }catch(e){
+    if(lbl)lbl.textContent=localStorage.getItem('app_ver')||'n/d';
+  }
 })();
 // Refresh giornaliero automatico della lista bambini
 (async function(){
