@@ -369,7 +369,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script src="xlsx-js-style.min.js"></script>
 <script>
-const APP_VERSION = '2026-09-08-9'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-09-08-10'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -1150,21 +1150,18 @@ async function exportXLS(){
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 
   let shared=false;
-  if(!navigator.canShare){
-    alert('DEBUG: navigator.canShare non esiste in questo browser');
-  }else{
+  const shareBroken=localStorage.getItem('xls_share_unsupported')==='1';
+  if(navigator.canShare&&!shareBroken){
     const file=new File([blob],filename,{type:blob.type});
-    const can=navigator.canShare({files:[file]});
-    if(!can){
-      alert('DEBUG: canShare({files}) = false. blob.type='+blob.type);
-    }else{
-      const ua=navigator.userActivation?('isActive='+navigator.userActivation.isActive+' hasBeenActive='+navigator.userActivation.hasBeenActive):'userActivation n/a';
+    if(navigator.canShare({files:[file]})){
       try{
         await navigator.share({files:[file],title:'Presenze '+from+' - '+to});
         shared=true;
       }catch(e){
         if(e.name==='AbortError'){showToast('Condivisione annullata');return}
-        alert('DEBUG errore share: '+e.name+': '+e.message+'\n'+ua+'\nUA: '+navigator.userAgent);
+        // condivisione non disponibile su questo browser/dispositivo: non
+        // ritentare ai prossimi export, si passa subito al download
+        localStorage.setItem('xls_share_unsupported','1');
       }
     }
   }
@@ -1174,7 +1171,7 @@ async function exportXLS(){
     a.href=url;a.download=filename;a.click();
     URL.revokeObjectURL(url);
   }
-  showToast(shared?'XLS condiviso':'XLS esportato');
+  showToast(shared?'XLS condiviso':'XLS scaricato');
 }
 
 /* LICENSE CHECK */

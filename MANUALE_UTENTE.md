@@ -186,7 +186,9 @@ Durante il caricamento vedi un indicatore di avanzamento (es. "Caricamento 2/5..
 
 Nella stessa pagina, il pulsante **"Esporta XLS"** genera un file Excel con il riepilogo delle presenze del periodo selezionato (stesse date "Da"/"A"): un bambino per riga, gli orari di entrata/uscita per ogni giorno del periodo e il totale ore per bambino, con il totale complessivo in fondo. È utile per archiviare o consegnare un resoconto leggibile, indipendentemente dal caricamento sul portale.
 
-Sul telefono, toccando "Esporta XLS" si apre direttamente il **pannello di condivisione** (lo stesso che compare condividendo una foto): da lì puoi inviare il file via e-mail, WhatsApp, AirDrop o qualsiasi altra app installata, senza dover prima passare dall'app "File". Se il telefono/browser non supporta questa funzione, il file viene scaricato normalmente nella cartella Download/File.
+Sul telefono, toccando "Esporta XLS" si apre direttamente il **pannello di condivisione** (lo stesso che compare condividendo una foto): da lì puoi inviare il file via e-mail, WhatsApp, AirDrop o qualsiasi altra app installata, senza dover prima passare dall'app "File".
+
+Se il telefono/browser non supporta questa funzione, il file viene scaricato normalmente nella cartella Download. In questo caso, su Android/Chrome puoi comunque condividerlo subito senza aprire l'app "File": tocca la notifica di download appena apparsa (o, se è già sparita, apri Chrome → menu ⋮ → **Download**, trova il file e tocca l'icona **Condividi** accanto ad esso).
 
 ---
 
