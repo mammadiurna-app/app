@@ -1149,15 +1149,20 @@ async function exportXLS(){
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 
   let shared=false;
-  if(navigator.canShare){
+  if(!navigator.canShare){
+    alert('DEBUG: navigator.canShare non esiste in questo browser');
+  }else{
     const file=new File([blob],filename,{type:blob.type});
-    if(navigator.canShare({files:[file]})){
+    const can=navigator.canShare({files:[file]});
+    if(!can){
+      alert('DEBUG: canShare({files}) = false. blob.type='+blob.type);
+    }else{
       try{
         await navigator.share({files:[file],title:'Presenze '+from+' - '+to});
         shared=true;
       }catch(e){
         if(e.name==='AbortError'){showToast('Condivisione annullata');return}
-        // altri errori: prosegue con il download come fallback
+        alert('DEBUG errore share: '+e.name+': '+e.message);
       }
     }
   }
