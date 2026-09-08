@@ -182,13 +182,18 @@ Durante il caricamento vedi un indicatore di avanzamento (es. "Caricamento 2/5..
 
 > I turni già caricati in precedenza (mostrati in grigio nel riepilogo) non vengono ricaricati: se hai bisogno di correggerne uno, devi prima cancellarlo direttamente dal portale AFDS, altrimenti il nuovo invio non avrà effetto.
 
-### Esportare le presenze in Excel
+### Esportare le presenze
 
-Nella stessa pagina, il pulsante **"Esporta XLS"** genera un file Excel con il riepilogo delle presenze del periodo selezionato (stesse date "Da"/"A"): un bambino per riga, gli orari di entrata/uscita per ogni giorno del periodo e il totale ore per bambino, con il totale complessivo in fondo. È utile per archiviare o consegnare un resoconto leggibile, indipendentemente dal caricamento sul portale.
+Nella stessa pagina trovi due pulsanti per esportare il riepilogo delle presenze del periodo selezionato (stesse date "Da"/"A"): un bambino per riga, gli orari di entrata/uscita per ogni giorno del periodo e il totale ore per bambino, con il totale complessivo in fondo.
 
-Sul telefono, toccando "Esporta XLS" si apre direttamente il **pannello di condivisione** (lo stesso che compare condividendo una foto): da lì puoi inviare il file via e-mail, WhatsApp, AirDrop o qualsiasi altra app installata, senza dover prima passare dall'app "File".
+- **"Esporta XLS"** genera un vero file Excel (`.xlsx`), utile per archiviare o consegnare un resoconto che altri possono aprire/modificare con Excel o Google Sheets.
+- **"Esporta PNG"** genera la stessa tabella come immagine, comoda da mandare al volo su WhatsApp o e-mail quando serve solo farla vedere, non un file modificabile.
 
-Se il telefono/browser non supporta questa funzione, il file viene scaricato normalmente nella cartella Download. In questo caso, su Android/Chrome puoi comunque condividerlo subito senza aprire l'app "File": tocca la notifica di download appena apparsa (o, se è già sparita, apri Chrome → menu ⋮ → **Download**, trova il file e tocca l'icona **Condividi** accanto ad esso).
+Sul telefono, toccando uno dei due pulsanti si apre di norma direttamente il **pannello di condivisione** (lo stesso che compare condividendo una foto): da lì puoi inviare il file via e-mail, WhatsApp, AirDrop o qualsiasi altra app installata, senza dover prima passare dall'app "File".
+
+Se il telefono/browser non supporta questa funzione (capita più spesso con l'XLS che con il PNG, su alcuni dispositivi Android), il file viene scaricato normalmente nella cartella Download. In questo caso, su Android/Chrome puoi comunque condividerlo subito senza aprire l'app "File": tocca la notifica di download appena apparsa (o, se è già sparita, apri Chrome → menu ⋮ → **Download**, trova il file e tocca l'icona **Condividi** accanto ad esso).
+
+> Se sul tuo telefono la condivisione diretta dell'XLS non funziona mai, prova **"Esporta PNG"**: su alcuni dispositivi la condivisione di immagini funziona anche quando quella dei file Excel no.
 
 ---
 

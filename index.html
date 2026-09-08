@@ -247,7 +247,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <button class="btn-primary" id="btnSync" onclick="startSync()"><span id="btnSyncLabel">Carica sul portale AFDS</span></button>
   <button class="btn-secondary" onclick="exportXLS()">Esporta XLS</button>
-  <button class="btn-secondary" onclick="testShareImage()">Test condivisione immagine (debug)</button>
+  <button class="btn-secondary" onclick="exportPNG()">Esporta PNG</button>
   <div class="divider"></div>
   <div class="section-label">Info sessione</div>
   <div style="font-size:12px;color:var(--text3);line-height:1.8">
@@ -370,7 +370,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script src="xlsx-js-style.min.js"></script>
 <script>
-const APP_VERSION = '2026-09-08-11'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-09-08-12'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -1035,30 +1035,8 @@ function minutiTra(tIn,tOut){
 function fmtOreMin(min){
   return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');
 }
-async function testShareImage(){
-  const canvas=document.createElement('canvas');
-  canvas.width=300;canvas.height=150;
-  const ctx=canvas.getContext('2d');
-  ctx.fillStyle='#2d5a3d';ctx.fillRect(0,0,300,150);
-  ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText('Test condivisione',20,80);
-  canvas.toBlob(async(blob)=>{
-    const file=new File([blob],'test.png',{type:'image/png'});
-    if(!navigator.canShare){alert('DEBUG: navigator.canShare non esiste');return}
-    const can=navigator.canShare({files:[file]});
-    if(!can){alert('DEBUG: canShare(png)=false');return}
-    try{
-      await navigator.share({files:[file],title:'Test'});
-      alert('DEBUG: condivisione PNG riuscita!');
-    }catch(e){
-      if(e.name==='AbortError'){alert('DEBUG: annullata dall\'utente (AbortError) - questo è normale se hai chiuso il pannello');return}
-      alert('DEBUG errore share PNG: '+e.name+': '+e.message);
-    }
-  },'image/png');
-}
-async function exportXLS(){
-  const from=document.getElementById('syncDateFrom').value;
-  const to=document.getElementById('syncDateTo').value;
-  if(!from||!to){showToast('Seleziona il periodo Dal/Al da esportare');return}
+function buildAttendanceGrid(from,to){
+  if(!from||!to){showToast('Seleziona il periodo Dal/Al da esportare');return null}
   const dates=[];
   for(let dt=new Date(from+'T12:00:00'),end=new Date(to+'T12:00:00');dt<=end;dt.setDate(dt.getDate()+1)){
     dates.push(dt.toISOString().slice(0,10));
@@ -1074,7 +1052,7 @@ async function exportXLS(){
       childSet.add(e.recordcode);
     });
   });
-  if(!childSet.size){showToast('Nessuna presenza con orari nel periodo selezionato');return}
+  if(!childSet.size){showToast('Nessuna presenza con orari nel periodo selezionato');return null}
 
   const sessioniPerData={};
   dates.forEach(d=>{
@@ -1086,6 +1064,120 @@ async function exportXLS(){
 
   const children=CHILDREN.filter(c=>childSet.has(c.recordcode))
     .sort((a,b)=>(a.lastname+a.name).localeCompare(b.lastname+b.name,'it'));
+
+  return{dates,byDateChild,sessioniPerData,blockWidths,children};
+}
+async function condividiOScarica(blob,filename,shareFlagKey,label){
+  let shared=false;
+  const shareBroken=localStorage.getItem(shareFlagKey)==='1';
+  if(navigator.canShare&&!shareBroken){
+    const file=new File([blob],filename,{type:blob.type});
+    if(navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({files:[file],title:label});
+        shared=true;
+      }catch(e){
+        if(e.name==='AbortError'){showToast('Condivisione annullata');return}
+        // condivisione non disponibile su questo browser/dispositivo: non
+        // ritentare ai prossimi export, si passa subito al download
+        localStorage.setItem(shareFlagKey,'1');
+      }
+    }
+  }
+  if(!shared){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=filename;a.click();
+    URL.revokeObjectURL(url);
+  }
+  showToast(shared?label+' condiviso':label+' scaricato');
+}
+async function exportPNG(){
+  const from=document.getElementById('syncDateFrom').value;
+  const to=document.getElementById('syncDateTo').value;
+  const grid=buildAttendanceGrid(from,to);
+  if(!grid)return;
+  const{dates,byDateChild,sessioniPerData,blockWidths,children}=grid;
+
+  const NAME_W=150,COL_W=58,ROW_H=32,HEAD_TOP=76;
+  const nDataCols=blockWidths.reduce((a,b)=>a+b,0);
+  const totColIdx=nDataCols;
+  const width=NAME_W+(nDataCols+1)*COL_W;
+  const nRows=1+children.length+1+1; // intestazione + bambini + vuota + totale
+  const height=HEAD_TOP+nRows*ROW_H+12;
+
+  const canvas=document.createElement('canvas');
+  canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+
+  const s=getSettings();
+  const nomeMamma=s.name||s.afdsUser||'';
+  ctx.fillStyle='#1a1a1a';
+  ctx.font='bold 20px sans-serif';
+  ctx.fillText(nomeMamma,width/2,24);
+  ctx.font='14px sans-serif';
+  ctx.fillText('Presenze dal '+fmtDataIt(from)+' al '+fmtDataIt(to),width/2,50);
+
+  const colOffsets=[];
+  {let acc=0;dates.forEach((d,i)=>{colOffsets[i]=acc;acc+=blockWidths[i]})}
+  const cellX=i=>NAME_W+i*COL_W;
+  const gridTop=HEAD_TOP,headerH=ROW_H;
+
+  ctx.strokeStyle='#ccc';ctx.lineWidth=1;
+  ctx.strokeRect(0,gridTop,NAME_W,headerH);
+  ctx.font='bold 13px sans-serif';
+  dates.forEach((d,i)=>{
+    const x0=cellX(colOffsets[i]),w=blockWidths[i]*COL_W;
+    ctx.strokeRect(x0,gridTop,w,headerH);
+    ctx.fillText(fmtHeaderData(d),x0+w/2,gridTop+headerH/2);
+  });
+  ctx.strokeRect(cellX(totColIdx),gridTop,COL_W,headerH);
+  ctx.fillText('Totale ore',cellX(totColIdx)+COL_W/2,gridTop+headerH/2);
+
+  ctx.font='13px sans-serif';
+  const totaliColonna=[];
+  children.forEach((child,idx)=>{
+    const y=gridTop+headerH+idx*ROW_H;
+    ctx.strokeRect(0,y,NAME_W,ROW_H);
+    ctx.fillText(child.lastname+' '+child.name,NAME_W/2,y+ROW_H/2);
+    let totaleMin=0;
+    dates.forEach((d,i)=>{
+      const c0=colOffsets[i];
+      const sessioni=byDateChild[d][child.recordcode]||[];
+      for(let k=0;k<sessioniPerData[d];k++){
+        const e=sessioni[k];
+        const xIn=cellX(c0+k*2),xOut=cellX(c0+k*2+1);
+        ctx.strokeRect(xIn,y,COL_W,ROW_H);
+        ctx.strokeRect(xOut,y,COL_W,ROW_H);
+        if(e){
+          ctx.fillText(e.timeIn,xIn+COL_W/2,y+ROW_H/2);
+          ctx.fillText(e.timeOut,xOut+COL_W/2,y+ROW_H/2);
+          totaleMin+=minutiTra(e.timeIn,e.timeOut);
+        }
+      }
+    });
+    ctx.strokeRect(cellX(totColIdx),y,COL_W,ROW_H);
+    ctx.fillText(fmtOreMin(totaleMin),cellX(totColIdx)+COL_W/2,y+ROW_H/2);
+    totaliColonna.push(totaleMin);
+  });
+
+  const yTotale=gridTop+headerH+(children.length+1)*ROW_H;
+  const sommaMin=totaliColonna.reduce((a,b)=>a+b,0);
+  ctx.font='bold 13px sans-serif';
+  ctx.fillText('Totale',NAME_W/2,yTotale+ROW_H/2);
+  ctx.fillText(fmtOreMin(sommaMin),cellX(totColIdx)+COL_W/2,yTotale+ROW_H/2);
+
+  const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+  await condividiOScarica(blob,'presenze_'+from+'_'+to+'.png','png_share_unsupported','PNG');
+}
+async function exportXLS(){
+  const from=document.getElementById('syncDateFrom').value;
+  const to=document.getElementById('syncDateTo').value;
+  const grid=buildAttendanceGrid(from,to);
+  if(!grid)return;
+  const{dates,byDateChild,sessioniPerData,blockWidths,children}=grid;
 
   const startCol=1; // colonna B (0-indexed)
   const colOffsets=[];
@@ -1166,33 +1258,9 @@ async function exportXLS(){
 
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Presenze');
-  const filename='presenze_'+from+'_'+to+'.xlsx';
   const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-
-  let shared=false;
-  const shareBroken=localStorage.getItem('xls_share_unsupported')==='1';
-  if(navigator.canShare&&!shareBroken){
-    const file=new File([blob],filename,{type:blob.type});
-    if(navigator.canShare({files:[file]})){
-      try{
-        await navigator.share({files:[file],title:'Presenze '+from+' - '+to});
-        shared=true;
-      }catch(e){
-        if(e.name==='AbortError'){showToast('Condivisione annullata');return}
-        // condivisione non disponibile su questo browser/dispositivo: non
-        // ritentare ai prossimi export, si passa subito al download
-        localStorage.setItem('xls_share_unsupported','1');
-      }
-    }
-  }
-  if(!shared){
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=filename;a.click();
-    URL.revokeObjectURL(url);
-  }
-  showToast(shared?'XLS condiviso':'XLS scaricato');
+  await condividiOScarica(blob,'presenze_'+from+'_'+to+'.xlsx','xls_share_unsupported','XLS');
 }
 
 /* LICENSE CHECK */
