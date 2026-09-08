@@ -247,8 +247,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <button class="btn-primary" id="btnSync" onclick="startSync()"><span id="btnSyncLabel">Carica sul portale AFDS</span></button>
   <button class="btn-secondary" onclick="exportXLS()">Esporta XLS</button>
-  <button class="btn-secondary" onclick="exportPNG()">Esporta PNG</button>
-  <button class="btn-secondary" onclick="testSharePdf()">Test condivisione PDF (debug)</button>
+  <button class="btn-secondary" onclick="exportPDF()">Esporta PDF</button>
   <div class="divider"></div>
   <div class="section-label">Info sessione</div>
   <div style="font-size:12px;color:var(--text3);line-height:1.8">
@@ -370,8 +369,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <script src="xlsx-js-style.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-09-08-13'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-09-08-14'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -1036,29 +1036,6 @@ function minutiTra(tIn,tOut){
 function fmtOreMin(min){
   return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');
 }
-async function testSharePdf(){
-  const content='BT /F1 24 Tf 20 80 Td (Test PDF Mamma Diurna) Tj ET';
-  const pdf='%PDF-1.1\n'+
-    '1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n'+
-    '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n'+
-    '3 0 obj<</Type/Page/Parent 2 0 R/Resources<</Font<</F1 4 0 R>>>>/MediaBox[0 0 300 150]/Contents 5 0 R>>endobj\n'+
-    '4 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n'+
-    '5 0 obj<</Length '+content.length+'>>\nstream\n'+content+'\nendstream\nendobj\n'+
-    'trailer<</Size 6/Root 1 0 R>>\n'+
-    '%%EOF';
-  const blob=new Blob([pdf],{type:'application/pdf'});
-  const file=new File([blob],'test.pdf',{type:'application/pdf'});
-  if(!navigator.canShare){alert('DEBUG: navigator.canShare non esiste');return}
-  const can=navigator.canShare({files:[file]});
-  if(!can){alert('DEBUG: canShare(pdf)=false');return}
-  try{
-    await navigator.share({files:[file],title:'Test PDF'});
-    alert('DEBUG: condivisione PDF riuscita!');
-  }catch(e){
-    if(e.name==='AbortError'){alert('DEBUG: annullata dall\'utente (AbortError) - normale se hai chiuso il pannello');return}
-    alert('DEBUG errore share PDF: '+e.name+': '+e.message);
-  }
-}
 function buildAttendanceGrid(from,to){
   if(!from||!to){showToast('Seleziona il periodo Dal/Al da esportare');return null}
   const dates=[];
@@ -1116,6 +1093,9 @@ async function condividiOScarica(blob,filename,shareFlagKey,label){
   }
   showToast(shared?label+' condiviso':label+' scaricato');
 }
+// Non collegata a nessun bottone: tenuta in archivio su richiesta, potrebbe
+// riservire in futuro (es. dispositivi dove anche la condivisione del PDF
+// dovesse rivelarsi problematica). Vedi exportPDF() per l'export attivo.
 async function exportPNG(){
   const from=document.getElementById('syncDateFrom').value;
   const to=document.getElementById('syncDateTo').value;
@@ -1195,6 +1175,82 @@ async function exportPNG(){
 
   const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
   await condividiOScarica(blob,'presenze_'+from+'_'+to+'.png','png_share_unsupported','PNG');
+}
+async function exportPDF(){
+  const from=document.getElementById('syncDateFrom').value;
+  const to=document.getElementById('syncDateTo').value;
+  const grid=buildAttendanceGrid(from,to);
+  if(!grid)return;
+  const{dates,byDateChild,sessioniPerData,blockWidths,children}=grid;
+
+  const MARGIN=14;
+  const NAME_W=110,COL_W=44,ROW_H=22,HEAD_TOP=54;
+  const nDataCols=blockWidths.reduce((a,b)=>a+b,0);
+  const totColIdx=nDataCols;
+  const gridW=NAME_W+(nDataCols+1)*COL_W;
+  const nRows=1+children.length+1+1; // intestazione + bambini + vuota + totale
+  const gridH=HEAD_TOP+nRows*ROW_H+16;
+  const width=gridW+MARGIN*2,height=gridH+MARGIN*2;
+
+  const doc=new jspdf.jsPDF({orientation:width>=height?'l':'p',unit:'pt',format:[width,height]});
+  doc.setFont('helvetica','bold');doc.setFontSize(16);
+  const s=getSettings();
+  const nomeMamma=s.name||s.afdsUser||'';
+  doc.text(nomeMamma,width/2,MARGIN+20,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.text('Presenze dal '+fmtDataIt(from)+' al '+fmtDataIt(to),width/2,MARGIN+38,{align:'center'});
+
+  const colOffsets=[];
+  {let acc=0;dates.forEach((d,i)=>{colOffsets[i]=acc;acc+=blockWidths[i]})}
+  const cellX=i=>MARGIN+NAME_W+i*COL_W;
+  const gridTop=MARGIN+HEAD_TOP,headerH=ROW_H;
+
+  doc.setDrawColor(180);
+  doc.rect(MARGIN,gridTop,NAME_W,headerH);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);
+  dates.forEach((d,i)=>{
+    const x0=cellX(colOffsets[i]),w=blockWidths[i]*COL_W;
+    doc.rect(x0,gridTop,w,headerH);
+    doc.text(fmtHeaderData(d),x0+w/2,gridTop+headerH/2+3,{align:'center'});
+  });
+  doc.rect(cellX(totColIdx),gridTop,COL_W,headerH);
+  doc.text('Totale ore',cellX(totColIdx)+COL_W/2,gridTop+headerH/2+3,{align:'center'});
+
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  const totaliColonna=[];
+  children.forEach((child,idx)=>{
+    const y=gridTop+headerH+idx*ROW_H;
+    doc.rect(MARGIN,y,NAME_W,ROW_H);
+    doc.text(child.lastname+' '+child.name,MARGIN+NAME_W/2,y+ROW_H/2+3,{align:'center'});
+    let totaleMin=0;
+    dates.forEach((d,i)=>{
+      const c0=colOffsets[i];
+      const sessioni=byDateChild[d][child.recordcode]||[];
+      for(let k=0;k<sessioniPerData[d];k++){
+        const e=sessioni[k];
+        const xIn=cellX(c0+k*2),xOut=cellX(c0+k*2+1);
+        doc.rect(xIn,y,COL_W,ROW_H);
+        doc.rect(xOut,y,COL_W,ROW_H);
+        if(e){
+          doc.text(e.timeIn,xIn+COL_W/2,y+ROW_H/2+3,{align:'center'});
+          doc.text(e.timeOut,xOut+COL_W/2,y+ROW_H/2+3,{align:'center'});
+          totaleMin+=minutiTra(e.timeIn,e.timeOut);
+        }
+      }
+    });
+    doc.rect(cellX(totColIdx),y,COL_W,ROW_H);
+    doc.text(fmtOreMin(totaleMin),cellX(totColIdx)+COL_W/2,y+ROW_H/2+3,{align:'center'});
+    totaliColonna.push(totaleMin);
+  });
+
+  const yTotale=gridTop+headerH+(children.length+1)*ROW_H;
+  const sommaMin=totaliColonna.reduce((a,b)=>a+b,0);
+  doc.setFont('helvetica','bold');
+  doc.text('Totale',MARGIN+NAME_W/2,yTotale+ROW_H/2+3,{align:'center'});
+  doc.text(fmtOreMin(sommaMin),cellX(totColIdx)+COL_W/2,yTotale+ROW_H/2+3,{align:'center'});
+
+  const blob=doc.output('blob');
+  await condividiOScarica(blob,'presenze_'+from+'_'+to+'.pdf','pdf_share_unsupported','PDF');
 }
 async function exportXLS(){
   const from=document.getElementById('syncDateFrom').value;
