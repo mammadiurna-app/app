@@ -1353,8 +1353,11 @@ loadSettings();
     if(known&&known!==v){
       const b=document.getElementById('updateBanner');
       b.style.display='flex';
+      // non salva app_ver qui: il banner deve ripresentarsi ad ogni avvio
+      // finché l'utente non tocca "Aggiorna" (vedi onclick sul banner)
+    }else{
+      localStorage.setItem('app_ver',v);
     }
-    localStorage.setItem('app_ver',v);
     if(lbl)lbl.textContent=v;
   }catch(e){
     if(lbl)lbl.textContent=localStorage.getItem('app_ver')||'n/d';
