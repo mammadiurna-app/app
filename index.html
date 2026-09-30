@@ -371,7 +371,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="xlsx-js-style.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-09-30-1'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-09-30-2'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -807,12 +807,15 @@ function openStatsOverlay(){
   const sel=document.getElementById('statsMonth');
   if(!sel.options.length){
     const now=new Date();
-    for(let i=0;i<24;i++){
+    let currentVal='';
+    for(let i=-1;i<24;i++){
       const d=new Date(now.getFullYear(),now.getMonth()-i,1);
       const val=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
       const label=d.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
       sel.add(new Option(label.charAt(0).toUpperCase()+label.slice(1),val));
+      if(i===0) currentVal=val;
     }
+    sel.value=currentVal;
   }
   renderStatsOverlay();
   document.getElementById('statsOverlay').classList.add('open');
