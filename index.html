@@ -371,7 +371,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="xlsx-js-style.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-09-08-14'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-09-30-1'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -445,7 +445,7 @@ let modalChild=null,modalEntryIdx=null;
 let timeoutHandle=null;
 let dpYear=0,dpMonth=0;
 
-function todayStr(){return new Date().toISOString().slice(0,10)}
+function todayStr(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')}
 function loadAllLogs(){try{return JSON.parse(localStorage.getItem('afds_all_logs')||'{}')}catch(e){return{}}}
 function saveAllLogs(){localStorage.setItem('afds_all_logs',JSON.stringify(allLogs))}
 function getSettings(){try{return JSON.parse(localStorage.getItem('afds_settings')||'{}')}catch(e){return{}}}
@@ -820,9 +820,12 @@ function openStatsOverlay(){
 function closeStatsOverlay(){document.getElementById('statsOverlay').classList.remove('open')}
 function renderStatsOverlay(){
   const month=document.getElementById('statsMonth').value;
+  const [mY,mM]=month.split('-').map(Number);
+  const monthStart=month+'-01';
+  const nextMonth=(mM===12?(mY+1)+'-01':mY+'-'+String(mM+1).padStart(2,'0'))+'-01';
   let totalMins=0,malMins=0,pattMins=0,col=0,pra=0,mer=0,cen=0;
   Object.keys(allLogs).forEach(date=>{
-    if(!date.startsWith(month))return;
+    if(date<monthStart||date>=nextMonth)return;
     (allLogs[date]||[]).forEach(e=>{
       if(e.timeIn&&e.timeOut){
         const d=toMinutes(e.timeOut)-toMinutes(e.timeIn);
