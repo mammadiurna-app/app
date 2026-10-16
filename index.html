@@ -145,7 +145,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .modal-footer{display:flex;gap:10px;padding:12px 18px 28px}
 .mf-note{padding:0 18px 28px}
 .mf-note textarea{width:100%;min-height:90px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font:inherit;font-size:14px;resize:vertical;background:var(--surface);color:var(--text)}
-.log-note{font-size:12px;color:var(--text2);font-style:italic;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-note-row{font-size:12px;color:var(--text2);font-style:italic;padding:6px 14px 6px 60px;border-top:1px solid var(--border);white-space:pre-wrap;word-break:break-word}
+.log-note-row b{font-style:normal;font-family:'DM Mono',monospace;font-weight:500}
 .agenda-scroll{position:relative;height:62vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .agenda-wrap{position:relative}
 .ag-block{position:absolute;left:0;right:0}
@@ -155,9 +156,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .ag-tick span{position:relative;top:-5px;background:transparent}
 .ag-skip{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);background:var(--surface2)}
 .ag-empty{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text3);font-style:italic}
-.ag-ev{position:absolute;left:52px;right:8px;height:40px;overflow:hidden;font-size:13px;line-height:1.3;display:flex;gap:8px;align-items:flex-start;padding-top:2px;z-index:2}
+.ag-ev{position:absolute;left:52px;right:8px;overflow:hidden;font-size:13px;line-height:1.3;display:flex;gap:8px;align-items:flex-start;padding-top:2px;z-index:2}
 .ag-ev .t{font-family:'DM Mono',monospace;font-size:12px;width:38px;flex:none;color:var(--text2);padding-top:1px}
-.ag-ev .tx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ag-ev .tx{min-width:0;flex:1}
+.ag-ev .tx .ln{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag-ev .tx .agenda-note{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ag-in{color:#000}
 .ag-out{color:#14532d}
 .agenda-note{color:var(--text2);font-style:italic}
@@ -407,7 +410,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="xlsx-js-style.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-10-16-2'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-10-16-3'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -810,10 +813,11 @@ function renderChildren(){
         <div class="log-dot"></div>
         <div class="log-times">${times}</div>
         <div class="log-extras">${extras}</div>
-        ${e.note?`<div class="log-note">${escHtml(e.note)}</div>`:''}
         <button class="log-del" onclick="event.stopPropagation();deleteEntry(${ri})">×</button>
       </div>`;
     });
+    const withNote=entries.filter(e=>e.note);
+    const notesHtml=withNote.map(e=>`<div class="log-note-row" onclick="event.stopPropagation();openModal('${c.recordcode}',${log.indexOf(e)})">${withNote.length>1&&e.timeIn?`<b>${e.timeIn}</b> `:''}${escHtml(e.note)}</div>`).join('');
     const addBtn=has?`<div class="child-add-turn" onclick="event.stopPropagation();openModal('${c.recordcode}')">+ Aggiungi turno</div>`:'';
     return `<div class="child-card ${has?'has-entries':''}" onclick="openModal('${c.recordcode}')">
       <div class="child-row">
@@ -821,7 +825,7 @@ function renderChildren(){
         <div class="child-row-name">${c.lastname} ${c.name}</div>
         <div class="child-row-hint">${has?'':'tocca per timbrare'}</div>
       </div>
-      ${has?`<div class="child-log-entries">${logRows}</div>${addBtn}`:''}
+      ${has?`<div class="child-log-entries">${logRows}</div>${notesHtml}${addBtn}`:''}
     </div>`;
   }).join('');
 }
@@ -917,14 +921,15 @@ function renderAgenda(){
     const b=blocks.find(k=>k.half===half);
     if(b)html+=`<div class="ag-half" style="top:${b.top+4}px">${lbl}</div>`;
   });
-  let prevTop=-Infinity,lastT=null,firstY=null;
+  let prevTop=-Infinity,prevH=0,lastT=null,firstY=null;
   ev.forEach(x=>{
-    let y=Math.max(yOf(x.m)-8,prevTop+AG_ROW);
-    prevTop=y;if(firstY===null)firstY=y;
-    html+=`<div class="ag-ev ag-${x.kind}" style="top:${y}px"><div class="t">${x.t!==lastT?x.t:''}</div><div class="tx">${x.kind==='in'?'Ingresso':'Uscita'} ${escHtml(x.name)}${x.note?` <span class="agenda-note">- ${escHtml(x.note)}</span>`:''}</div></div>`;
+    const rh=x.note?AG_ROW+16:AG_ROW;
+    let y=Math.max(yOf(x.m)-8,prevTop+prevH);
+    prevTop=y;prevH=rh;if(firstY===null)firstY=y;
+    html+=`<div class="ag-ev ag-${x.kind}" style="top:${y}px;height:${rh}px"><div class="t">${x.t!==lastT?x.t:''}</div><div class="tx"><div class="ln">${x.kind==='in'?'Ingresso':'Uscita'} ${escHtml(x.name)}</div>${x.note?`<span class="agenda-note">${escHtml(x.note)}</span>`:''}</div></div>`;
     lastT=x.t;
   });
-  const total=Math.max(top,prevTop+AG_ROW)+AG_PAD;
+  const total=Math.max(top,prevTop+prevH)+AG_PAD;
   if(isToday){
     const ny=yOf(nowR);
     html+=`<div class="ag-now" style="top:${ny}px"><span>${minsToHHMM(nowR)}</span></div>`;
