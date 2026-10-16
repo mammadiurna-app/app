@@ -409,7 +409,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="xlsx-js-style.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-10-16-6'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-10-16-7'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -831,7 +831,7 @@ function renderChildren(){
 function escHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 /* AGENDA CRONOLOGICA */
-const AG_PX=2,AG_PAD=16,AG_ROW=40,AG_GAP=180,AG_MARGIN=30,AG_SKIP_H=36,AG_EMPTY_H=140;
+const AG_PAD=12,AG_ROW=24,AG_ROW_NOTE=40,AG_BPAD=6,AG_EMPTY_H=40,AG_HALF_EMPTY_H=72,AG_MARK_H=12;
 let _agTimer=null,_agLastInteract=0,_agLastUpdate=0;
 function openAgendaOverlay(){
   resetInactivityTimer();
@@ -880,72 +880,87 @@ function renderAgenda(){
   if(!ev.length){el.style.height='auto';el.innerHTML='<div style="text-align:center;padding:30px 0;color:var(--text3);font-size:14px">Nessuna timbratura</div>';_agFocusY=0;return}
   ev.sort((a,b)=>a.m-b.m||(a.kind===b.kind?0:a.kind==='out'?-1:1));
   const isToday=activeDate===todayStr();
-  const nm=toMinutes(nowHHMM());
-  const nowR=Math.min(1439,Math.round(nm/5)*5);
-  // finestra
-  let S=Math.min(420,Math.floor(ev[0].m/60)*60),E=Math.max(1080,Math.ceil(ev[ev.length-1].m/60)*60);
+  const nowR=Math.min(1439,Math.round(toMinutes(nowHHMM())/5)*5);
+  // finestra (ore piene)
+  let S=Math.min(420,Math.floor(ev[0].m/60)*60),E=Math.max(1080,Math.ceil((ev[ev.length-1].m+1)/60)*60);
   if(isToday){S=Math.min(S,Math.floor(nowR/60)*60);E=Math.max(E,Math.min(1440,Math.ceil((nowR+1)/60)*60));}
   S=Math.min(S,660);E=Math.max(E,780);
-  // blocchi
-  const blocks=[];let top=AG_PAD;
-  const add=(type,s0,e0,h,half)=>{blocks.push({type,s:s0,e:e0,top,h,half});top+=h};
-  [['am',S,720],['pm',720,E]].forEach(([half,hs,he])=>{
-    const present=stays.some(([a,b])=>a<he&&b>hs);
-    const times=[...new Set(ev.filter(x=>x.m>=hs&&x.m<he).map(x=>x.m))].sort((a,b)=>a-b);
-    if(!present&&!times.length){add('empty',hs,he,AG_EMPTY_H,half);return}
-    const pts=[hs,...times.filter(t=>t>hs),he];
-    for(let i=0;i<pts.length-1;i++){
-      const a=pts[i],b=pts[i+1];
-      if(b-a>AG_GAP){
-        add('lin',a,a+AG_MARGIN,AG_MARGIN*AG_PX,half);
-        add('skip',a+AG_MARGIN,b-AG_MARGIN,AG_SKIP_H,half);
-        add('lin',b-AG_MARGIN,b,AG_MARGIN*AG_PX,half);
-      }else add('lin',a,b,(b-a)*AG_PX,half);
-    }
-  });
   const shade=n=>n?`rgba(0,0,0,${Math.min(n,4)*0.04})`:'';
   // massimo numero di bambini contemporaneamente presenti in [a,b)
   const maxPresent=(a,b)=>{
     const pts=[a,...stays.map(x=>x[0]).filter(t=>t>a&&t<b)];
     return Math.max(...pts.map(t=>stays.filter(([i,o])=>i<=t&&o>t).length));
   };
-  const yOf=m=>{
-    const b=blocks.find(k=>m>=k.s&&m<=k.e)||blocks[blocks.length-1];
-    return b.top+(Math.min(Math.max(m,b.s),b.e)-b.s)/(b.e-b.s)*b.h;
+  const evH=e=>e.note?AG_ROW_NOTE:AG_ROW;
+  // unita' di layout: una per ora, o per mezza giornata vuota
+  const units=[];
+  [['am',S,720],['pm',720,E]].forEach(([half,hs,he])=>{
+    if(!stays.some(([a,b])=>a<he&&b>hs)&&!ev.some(x=>x.m>=hs&&x.m<he)){units.push({type:'halfEmpty',half,hs,he});return}
+    for(let h=hs;h<he;h+=60){
+      units.push({type:'hour',half,h,evs:ev.filter(x=>x.m>=h&&x.m<h+60),n:maxPresent(h,h+60),hasNow:isToday&&nowR>=h&&nowR<h+60});
+    }
+  });
+  // raggruppa ore vuote consecutive (stesso grigio, senza ora corrente) in una riga di salto
+  const blocks=[];
+  for(let i=0;i<units.length;i++){
+    const u=units[i];
+    const empty=x=>x.type==='hour'&&!x.evs.length&&!x.hasNow;
+    if(empty(u)){
+      let j=i;
+      while(j+1<units.length&&empty(units[j+1])&&units[j+1].n===u.n&&units[j+1].half===u.half)j++;
+      if(j>i){blocks.push({type:'skip',half:u.half,s:u.h,e:units[j].h+60,n:u.n});i=j;continue}
+    }
+    blocks.push(u);
+  }
+  let top=AG_PAD,html='',focusY=null;
+  const labeled={};
+  const halfLabel=(half,y)=>{
+    if(labeled[half])return;labeled[half]=1;
+    html+=`<div class="ag-half" style="top:${y+4}px">${half==='am'?'Mattina':'Pomeriggio'}</div>`;
   };
-  let html='';
   blocks.forEach(k=>{
-    const st=`top:${k.top}px;height:${k.h}px`;
-    if(k.type==='skip'){html+=`<div class="ag-skip" style="${st};background:${shade(maxPresent(k.s,k.e))||'var(--surface)'}">··· ${fmtHM(k.e-k.s)} senza eventi ···</div>`;return}
-    if(k.type==='lin'){
-      // i blocchi iniziano/finiscono a ogni ingresso/uscita: presenza costante al loro interno
-      const n=maxPresent(k.s,k.e);
-      if(n)html+=`<div class="ag-block" style="${st};background:${shade(n)}"></div>`;
+    if(k.type==='halfEmpty'){
+      const nowIn=isToday&&nowR>=k.hs&&nowR<k.he;
+      html+=`<div class="ag-empty" style="top:${top}px;height:${AG_HALF_EMPTY_H}px">Nessun bambino</div>`;
+      halfLabel(k.half,top);
+      if(nowIn){const y=top+(nowR-k.hs)/(k.he-k.hs)*AG_HALF_EMPTY_H;html+=`<div class="ag-now" style="top:${y}px"><span>${minsToHHMM(nowR)}</span></div>`;focusY=y}
+      top+=AG_HALF_EMPTY_H;return;
     }
-    if(k.type==='empty'){html+=`<div class="ag-empty" style="${st}">Nessun bambino</div>`;return}
-    for(let h=Math.ceil(k.s/60)*60;h<k.e;h+=60){
-      html+=`<div class="ag-tick" style="top:${yOf(h)}px"><span>${minsToHHMM(h)}</span></div>`;
+    if(k.type==='skip'){
+      const nh=(k.e-k.s)/60;
+      html+=`<div class="ag-skip" style="top:${top}px;height:${AG_EMPTY_H}px;background:${shade(k.n)||'var(--surface)'}">··· ${nh} ore senza eventi ···</div>`;
+      halfLabel(k.half,top);
+      top+=AG_EMPTY_H;return;
     }
+    // ora
+    const items=[];
+    let markDone=!k.hasNow;
+    k.evs.forEach(x=>{
+      if(!markDone&&x.m>nowR){items.push({mark:true,h:AG_MARK_H});markDone=true}
+      items.push({x,h:evH(x)});
+    });
+    if(!markDone)items.push({mark:true,h:AG_MARK_H});
+    const h=Math.max(AG_EMPTY_H,AG_BPAD*2+items.reduce((t,i)=>t+i.h,0));
+    if(k.n)html+=`<div class="ag-block" style="top:${top}px;height:${h}px;background:${shade(k.n)}"></div>`;
+    html+=`<div class="ag-tick" style="top:${top}px"><span>${minsToHHMM(k.h)}</span></div>`;
+    halfLabel(k.half,top);
+    let y=top+AG_BPAD;
+    items.forEach(i=>{
+      if(i.mark){
+        const my=y+AG_MARK_H/2;
+        html+=`<div class="ag-now" style="top:${my}px"><span>${minsToHHMM(nowR)}</span></div>`;
+        focusY=my;
+      }else{
+        const x=i.x;
+        if(focusY===null&&!isToday&&!html.includes('ag-ev'))focusY=y+i.h/2;
+        html+=`<div class="ag-ev ag-${x.kind}" style="top:${y}px;height:${i.h}px"><div class="t">${x.t}</div><div class="tx"><div class="ln">${x.kind==='in'?'Ingresso':'Uscita'} ${escHtml(x.name)}</div>${x.note?`<span class="agenda-note">${escHtml(x.note)}</span>`:''}</div></div>`;
+      }
+      y+=i.h;
+    });
+    top+=h;
   });
-  [['Mattina','am'],['Pomeriggio','pm']].forEach(([lbl,half])=>{
-    const b=blocks.find(k=>k.half===half);
-    if(b)html+=`<div class="ag-half" style="top:${b.top+4}px">${lbl}</div>`;
-  });
-  let prevTop=-Infinity,prevH=0,lastT=null,firstY=null;
-  ev.forEach(x=>{
-    const rh=x.note?AG_ROW+16:AG_ROW;
-    let y=Math.max(yOf(x.m)-8,prevTop+prevH);
-    prevTop=y;prevH=rh;if(firstY===null)firstY=y;
-    html+=`<div class="ag-ev ag-${x.kind}" style="top:${y}px;height:${rh}px"><div class="t">${x.t!==lastT?x.t:''}</div><div class="tx"><div class="ln">${x.kind==='in'?'Ingresso':'Uscita'} ${escHtml(x.name)}</div>${x.note?`<span class="agenda-note">${escHtml(x.note)}</span>`:''}</div></div>`;
-    lastT=x.t;
-  });
-  const total=Math.max(top,prevTop+prevH)+AG_PAD;
-  if(isToday){
-    const ny=yOf(nowR);
-    html+=`<div class="ag-now" style="top:${ny}px"><span>${minsToHHMM(nowR)}</span></div>`;
-    _agFocusY=ny;
-  }else _agFocusY=firstY+AG_ROW/2;
-  el.style.height=total+'px';
+  _agFocusY=focusY===null?0:focusY;
+  el.style.height=(top+AG_PAD)+'px';
   el.innerHTML=html;
 }
 
