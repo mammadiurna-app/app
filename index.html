@@ -150,7 +150,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .agenda-scroll{position:relative;height:62vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .agenda-wrap{position:relative}
 .ag-block{position:absolute;left:0;right:0}
-.ag-block.pm{background:rgba(0,0,0,.035)}
 .ag-half{position:absolute;right:8px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
 .ag-tick{position:absolute;left:0;right:0;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);padding-left:6px;line-height:1}
 .ag-tick span{position:relative;top:-5px;background:transparent}
@@ -410,7 +409,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="xlsx-js-style.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-10-16-3'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-10-16-6'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -706,8 +705,8 @@ function _doOpenModal(rc,entryIdx){
   const now=nowHHMM();
   const ex=(modalEntryIdx!==null)?log[modalEntryIdx]:null;
   if(ex){
-    document.getElementById('mTimeIn').value=ex.timeIn||'';
-    document.getElementById('mTimeOut').value=ex.timeOut||(ex.timeIn?now:'');
+    document.getElementById('mTimeIn').value=ex.rawIn||ex.timeIn||'';
+    document.getElementById('mTimeOut').value=(ex.rawOut||ex.timeOut)||((ex.rawIn||ex.timeIn)?now:'');
     ['Pattuite','Malattia','Colazione','Pranzo','Merenda','Cena'].forEach(k=>document.getElementById('mChk'+k).classList.toggle('checked',!!ex['chk'+k]));
     document.getElementById('mNote').value=ex.note||'';
   }else{
@@ -770,7 +769,7 @@ function saveModal(){
     &&!document.getElementById('mChkCena').classList.contains('checked')){
     showToast("Inserisci almeno un orario o un pasto");return;
   }
-  const entry={recordcode:modalChild.recordcode,ts:new Date().toISOString(),timeIn,timeOut,
+  const entry={recordcode:modalChild.recordcode,ts:new Date().toISOString(),timeIn,timeOut,rawIn,rawOut,
     chkPattuite:document.getElementById('mChkPattuite').classList.contains('checked'),
     chkMalattia:document.getElementById('mChkMalattia').classList.contains('checked'),
     chkColazione:document.getElementById('mChkColazione').classList.contains('checked'),
@@ -871,11 +870,12 @@ function renderAgenda(){
   log.forEach(e=>{
     const c=CHILDREN.find(x=>x.recordcode===e.recordcode);
     const name=c?c.lastname+' '+c.name:e.recordcode;
-    if(e.timeIn){
-      ev.push({m:toMinutes(e.timeIn),t:e.timeIn,kind:'in',name,note:e.note||''});
-      stays.push([toMinutes(e.timeIn),e.timeOut?toMinutes(e.timeOut):Infinity]);
+    const tIn=e.rawIn||e.timeIn,tOut=e.rawOut||e.timeOut;
+    if(tIn){
+      ev.push({m:toMinutes(tIn),t:tIn,kind:'in',name,note:e.note||''});
+      stays.push([toMinutes(tIn),tOut?toMinutes(tOut):Infinity]);
     }
-    if(e.timeOut)ev.push({m:toMinutes(e.timeOut),t:e.timeOut,kind:'out',name,note:''});
+    if(tOut)ev.push({m:toMinutes(tOut),t:tOut,kind:'out',name,note:''});
   });
   if(!ev.length){el.style.height='auto';el.innerHTML='<div style="text-align:center;padding:30px 0;color:var(--text3);font-size:14px">Nessuna timbratura</div>';_agFocusY=0;return}
   ev.sort((a,b)=>a.m-b.m||(a.kind===b.kind?0:a.kind==='out'?-1:1));
@@ -903,6 +903,12 @@ function renderAgenda(){
       }else add('lin',a,b,(b-a)*AG_PX,half);
     }
   });
+  const shade=n=>n?`rgba(0,0,0,${Math.min(n,4)*0.04})`:'';
+  // massimo numero di bambini contemporaneamente presenti in [a,b)
+  const maxPresent=(a,b)=>{
+    const pts=[a,...stays.map(x=>x[0]).filter(t=>t>a&&t<b)];
+    return Math.max(...pts.map(t=>stays.filter(([i,o])=>i<=t&&o>t).length));
+  };
   const yOf=m=>{
     const b=blocks.find(k=>m>=k.s&&m<=k.e)||blocks[blocks.length-1];
     return b.top+(Math.min(Math.max(m,b.s),b.e)-b.s)/(b.e-b.s)*b.h;
@@ -910,8 +916,12 @@ function renderAgenda(){
   let html='';
   blocks.forEach(k=>{
     const st=`top:${k.top}px;height:${k.h}px`;
-    if(k.type==='skip'){html+=`<div class="ag-skip" style="${st}">··· ${fmtHM(k.e-k.s)} senza eventi ···</div>`;return}
-    html+=`<div class="ag-block ${k.half==='pm'?'pm':''}" style="${st}"></div>`;
+    if(k.type==='skip'){html+=`<div class="ag-skip" style="${st};background:${shade(maxPresent(k.s,k.e))||'var(--surface)'}">··· ${fmtHM(k.e-k.s)} senza eventi ···</div>`;return}
+    if(k.type==='lin'){
+      // i blocchi iniziano/finiscono a ogni ingresso/uscita: presenza costante al loro interno
+      const n=maxPresent(k.s,k.e);
+      if(n)html+=`<div class="ag-block" style="${st};background:${shade(n)}"></div>`;
+    }
     if(k.type==='empty'){html+=`<div class="ag-empty" style="${st}">Nessun bambino</div>`;return}
     for(let h=Math.ceil(k.s/60)*60;h<k.e;h+=60){
       html+=`<div class="ag-tick" style="top:${yOf(h)}px"><span>${minsToHHMM(h)}</span></div>`;
