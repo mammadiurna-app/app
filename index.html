@@ -143,6 +143,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mf-check.checked::after{content:'';display:block;width:6px;height:10px;border-right:2px solid white;border-bottom:2px solid white;transform:rotate(45deg) translate(-1px,-1px)}
 .modal-totale{background:var(--surface2);margin:0 -18px;padding:12px 18px;display:flex;align-items:center}
 .modal-footer{display:flex;gap:10px;padding:12px 18px 28px}
+.mf-note{padding:0 18px 28px}
+.mf-note textarea{width:100%;min-height:90px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font:inherit;font-size:14px;resize:vertical;background:var(--surface);color:var(--text)}
+.log-note{font-size:12px;color:var(--text2);font-style:italic;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agenda-scroll{position:relative;height:62vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.agenda-wrap{position:relative}
+.ag-block{position:absolute;left:0;right:0}
+.ag-block.pm{background:rgba(0,0,0,.035)}
+.ag-half{position:absolute;right:8px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.ag-tick{position:absolute;left:0;right:0;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);padding-left:6px;line-height:1}
+.ag-tick span{position:relative;top:-5px;background:transparent}
+.ag-skip{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);background:var(--surface2)}
+.ag-empty{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text3);font-style:italic}
+.ag-ev{position:absolute;left:52px;right:8px;height:40px;overflow:hidden;font-size:13px;line-height:1.3;display:flex;gap:8px;align-items:flex-start;padding-top:2px;z-index:2}
+.ag-ev .t{font-family:'DM Mono',monospace;font-size:12px;width:38px;flex:none;color:var(--text2);padding-top:1px}
+.ag-ev .tx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ag-in{color:#000}
+.ag-out{color:#14532d}
+.agenda-note{color:var(--text2);font-style:italic}
+.ag-now{position:absolute;left:0;right:0;height:2px;background:var(--danger);z-index:3}
+.ag-now span{position:absolute;left:4px;top:-8px;background:var(--danger);color:#fff;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;padding:1px 4px;border-radius:4px}
 .btn-save{flex:2;padding:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;cursor:pointer}
 .btn-save:active{background:#1e3d29}
 .btn-cancel{flex:1;padding:13px;background:var(--danger);color:white;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;cursor:pointer}
@@ -211,7 +231,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="page-bambini" class="page active">
   <div class="stats-row">
     <div class="stat-pill"><div class="stat-num green" id="statPresenti">0</div><div class="stat-lbl">presenti</div></div>
-    <div class="stat-pill"><div class="stat-num red" id="statTimb">0</div><div class="stat-lbl">timbrature</div></div>
+    <div class="stat-pill" onclick="openAgendaOverlay()" style="cursor:pointer"><div class="stat-num red" id="statTimb">0</div><div class="stat-lbl">timbrature ↗</div></div>
     <div class="stat-pill" onclick="openStatsOverlay()" style="cursor:pointer"><div class="stat-num" id="statOre">0:00</div><div class="stat-lbl">ore totali ↗</div></div>
   </div>
   <div id="childrenList"></div>
@@ -337,6 +357,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="btn-cancel" onclick="closeModal()">Annulla</button>
       <button class="btn-save" onclick="saveModal()">Salva</button>
     </div>
+    <div class="mf-note">
+      <div class="mf-label muted" style="margin-bottom:6px">Note</div>
+      <textarea id="mNote" placeholder="es. Portare a scuola"></textarea>
+    </div>
   </div>
 </div>
 
@@ -357,6 +381,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
+<!-- Agenda overlay -->
+<div class="modal-overlay" id="agendaOverlay" onclick="if(event.target===this)closeAgendaOverlay()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="agendaTitle">Agenda</div>
+      <button class="modal-close" onclick="closeAgendaOverlay()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0 0 12px"><div class="agenda-scroll" id="agendaScroll"><div class="agenda-wrap" id="agendaContent"></div></div></div>
+  </div>
+</div>
+
 <!-- License popup -->
 <div class="lic-overlay" id="licOverlay">
   <div class="lic-box">
@@ -371,7 +407,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="xlsx-js-style.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-09-30-2'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-10-16-2'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -670,7 +706,9 @@ function _doOpenModal(rc,entryIdx){
     document.getElementById('mTimeIn').value=ex.timeIn||'';
     document.getElementById('mTimeOut').value=ex.timeOut||(ex.timeIn?now:'');
     ['Pattuite','Malattia','Colazione','Pranzo','Merenda','Cena'].forEach(k=>document.getElementById('mChk'+k).classList.toggle('checked',!!ex['chk'+k]));
+    document.getElementById('mNote').value=ex.note||'';
   }else{
+    document.getElementById('mNote').value='';
     document.getElementById('mTimeIn').value=now;
     document.getElementById('mTimeOut').value='';
     ['Pattuite','Malattia','Colazione','Pranzo','Merenda','Cena'].forEach(k=>document.getElementById('mChk'+k).classList.remove('checked'));
@@ -736,6 +774,7 @@ function saveModal(){
     chkPranzo:document.getElementById('mChkPranzo').classList.contains('checked'),
     chkMerenda:document.getElementById('mChkMerenda').classList.contains('checked'),
     chkCena:document.getElementById('mChkCena').classList.contains('checked'),
+    note:document.getElementById('mNote').value.trim(),
     synced:false};
   if(modalEntryIdx!==null)log[modalEntryIdx]=entry;else log.push(entry);
   saveLog();closeModal();renderChildren();updateStats();
@@ -771,6 +810,7 @@ function renderChildren(){
         <div class="log-dot"></div>
         <div class="log-times">${times}</div>
         <div class="log-extras">${extras}</div>
+        ${e.note?`<div class="log-note">${escHtml(e.note)}</div>`:''}
         <button class="log-del" onclick="event.stopPropagation();deleteEntry(${ri})">×</button>
       </div>`;
     });
@@ -785,6 +825,115 @@ function renderChildren(){
     </div>`;
   }).join('');
 }
+function escHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+/* AGENDA CRONOLOGICA */
+const AG_PX=2,AG_PAD=16,AG_ROW=40,AG_GAP=180,AG_MARGIN=30,AG_SKIP_H=36,AG_EMPTY_H=140;
+let _agTimer=null,_agLastInteract=0,_agLastUpdate=0;
+function openAgendaOverlay(){
+  resetInactivityTimer();
+  renderAgenda(true);
+  document.getElementById('agendaOverlay').classList.add('open');
+  centerAgenda();
+  _agLastInteract=0;_agLastUpdate=Date.now();
+  clearInterval(_agTimer);
+  _agTimer=setInterval(()=>{
+    const n=Date.now();
+    if(activeDate!==todayStr())return;
+    if(n-_agLastInteract<60000||n-_agLastUpdate<180000)return;
+    _agLastUpdate=n;renderAgenda(false);centerAgenda();
+  },15000);
+}
+function closeAgendaOverlay(){
+  document.getElementById('agendaOverlay').classList.remove('open');
+  clearInterval(_agTimer);_agTimer=null;
+}
+(function(){
+  const sc=document.getElementById('agendaScroll');
+  ['scroll','touchstart','touchmove','wheel','mousedown'].forEach(ev=>sc.addEventListener(ev,()=>{_agLastInteract=Date.now()},{passive:true}));
+})();
+function centerAgenda(){
+  const sc=document.getElementById('agendaScroll');
+  const y=(typeof _agFocusY==='number')?_agFocusY:0;
+  sc.scrollTop=Math.max(0,y-sc.clientHeight/2);
+}
+let _agFocusY=0;
+function fmtHM(m){return Math.floor(m/60)+'h'+(m%60?' '+m%60+"'":'')}
+function renderAgenda(){
+  const d=new Date(activeDate+'T12:00:00');
+  document.getElementById('agendaTitle').textContent='Agenda · '+d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+  const el=document.getElementById('agendaContent');
+  const ev=[],stays=[];
+  log.forEach(e=>{
+    const c=CHILDREN.find(x=>x.recordcode===e.recordcode);
+    const name=c?c.lastname+' '+c.name:e.recordcode;
+    if(e.timeIn){
+      ev.push({m:toMinutes(e.timeIn),t:e.timeIn,kind:'in',name,note:e.note||''});
+      stays.push([toMinutes(e.timeIn),e.timeOut?toMinutes(e.timeOut):Infinity]);
+    }
+    if(e.timeOut)ev.push({m:toMinutes(e.timeOut),t:e.timeOut,kind:'out',name,note:''});
+  });
+  if(!ev.length){el.style.height='auto';el.innerHTML='<div style="text-align:center;padding:30px 0;color:var(--text3);font-size:14px">Nessuna timbratura</div>';_agFocusY=0;return}
+  ev.sort((a,b)=>a.m-b.m||(a.kind===b.kind?0:a.kind==='out'?-1:1));
+  const isToday=activeDate===todayStr();
+  const nm=toMinutes(nowHHMM());
+  const nowR=Math.min(1439,Math.round(nm/5)*5);
+  // finestra
+  let S=Math.min(420,Math.floor(ev[0].m/60)*60),E=Math.max(1080,Math.ceil(ev[ev.length-1].m/60)*60);
+  if(isToday){S=Math.min(S,Math.floor(nowR/60)*60);E=Math.max(E,Math.min(1440,Math.ceil((nowR+1)/60)*60));}
+  S=Math.min(S,660);E=Math.max(E,780);
+  // blocchi
+  const blocks=[];let top=AG_PAD;
+  const add=(type,s0,e0,h,half)=>{blocks.push({type,s:s0,e:e0,top,h,half});top+=h};
+  [['am',S,720],['pm',720,E]].forEach(([half,hs,he])=>{
+    const present=stays.some(([a,b])=>a<he&&b>hs);
+    const times=[...new Set(ev.filter(x=>x.m>=hs&&x.m<he).map(x=>x.m))].sort((a,b)=>a-b);
+    if(!present&&!times.length){add('empty',hs,he,AG_EMPTY_H,half);return}
+    const pts=[hs,...times.filter(t=>t>hs),he];
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1];
+      if(b-a>AG_GAP){
+        add('lin',a,a+AG_MARGIN,AG_MARGIN*AG_PX,half);
+        add('skip',a+AG_MARGIN,b-AG_MARGIN,AG_SKIP_H,half);
+        add('lin',b-AG_MARGIN,b,AG_MARGIN*AG_PX,half);
+      }else add('lin',a,b,(b-a)*AG_PX,half);
+    }
+  });
+  const yOf=m=>{
+    const b=blocks.find(k=>m>=k.s&&m<=k.e)||blocks[blocks.length-1];
+    return b.top+(Math.min(Math.max(m,b.s),b.e)-b.s)/(b.e-b.s)*b.h;
+  };
+  let html='';
+  blocks.forEach(k=>{
+    const st=`top:${k.top}px;height:${k.h}px`;
+    if(k.type==='skip'){html+=`<div class="ag-skip" style="${st}">··· ${fmtHM(k.e-k.s)} senza eventi ···</div>`;return}
+    html+=`<div class="ag-block ${k.half==='pm'?'pm':''}" style="${st}"></div>`;
+    if(k.type==='empty'){html+=`<div class="ag-empty" style="${st}">Nessun bambino</div>`;return}
+    for(let h=Math.ceil(k.s/60)*60;h<k.e;h+=60){
+      html+=`<div class="ag-tick" style="top:${yOf(h)}px"><span>${minsToHHMM(h)}</span></div>`;
+    }
+  });
+  [['Mattina','am'],['Pomeriggio','pm']].forEach(([lbl,half])=>{
+    const b=blocks.find(k=>k.half===half);
+    if(b)html+=`<div class="ag-half" style="top:${b.top+4}px">${lbl}</div>`;
+  });
+  let prevTop=-Infinity,lastT=null,firstY=null;
+  ev.forEach(x=>{
+    let y=Math.max(yOf(x.m)-8,prevTop+AG_ROW);
+    prevTop=y;if(firstY===null)firstY=y;
+    html+=`<div class="ag-ev ag-${x.kind}" style="top:${y}px"><div class="t">${x.t!==lastT?x.t:''}</div><div class="tx">${x.kind==='in'?'Ingresso':'Uscita'} ${escHtml(x.name)}${x.note?` <span class="agenda-note">- ${escHtml(x.note)}</span>`:''}</div></div>`;
+    lastT=x.t;
+  });
+  const total=Math.max(top,prevTop+AG_ROW)+AG_PAD;
+  if(isToday){
+    const ny=yOf(nowR);
+    html+=`<div class="ag-now" style="top:${ny}px"><span>${minsToHHMM(nowR)}</span></div>`;
+    _agFocusY=ny;
+  }else _agFocusY=firstY+AG_ROW/2;
+  el.style.height=total+'px';
+  el.innerHTML=html;
+}
+
 function updateStats(){
   const present=log.filter(e=>e.timeIn&&!e.timeOut).length;
   document.getElementById('statPresenti').textContent=present;
