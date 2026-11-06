@@ -409,7 +409,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="xlsx-js-style.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script>
-const APP_VERSION = '2026-10-16-8'; // tenere sincronizzata con version.json ad ogni deploy
+const APP_VERSION = '2026-11-06-1'; // tenere sincronizzata con version.json ad ogni deploy
 const PROXY_URL = 'https://afds-proxy.gianugo-altieri.workers.dev';
 
 function getBaseURL(){return PROXY_URL+'/api'}
@@ -890,7 +890,7 @@ function renderAgenda(){
   let S=Math.min(420,Math.floor(ev[0].m/60)*60),E=Math.max(1080,Math.ceil((ev[ev.length-1].m+1)/60)*60);
   if(isToday){S=Math.min(S,Math.floor(nowR/60)*60);E=Math.max(E,Math.min(1440,Math.ceil((nowR+1)/60)*60));}
   S=Math.min(S,660);E=Math.max(E,780);
-  const shade=n=>n?`rgba(0,0,0,${Math.min(n,4)*0.04})`:'';
+  const shade=n=>n?`rgba(0,0,0,${Math.min(n,3)*0.07})`:'';
   // massimo numero di bambini contemporaneamente presenti in [a,b)
   const maxPresent=(a,b)=>{
     const pts=[a,...stays.map(x=>x[0]).filter(t=>t>a&&t<b)];
