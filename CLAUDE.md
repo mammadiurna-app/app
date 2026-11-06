@@ -91,6 +91,23 @@ Foglio: `Foglio1`, colonne A2:E100
 
 Costanti nel worker: `GRACE_DAYS = 3`, `WARN_DAYS = 10`.
 
+## Note e Agenda cronologica
+
+Funzioni in `index.html`: `openAgendaOverlay` / `renderAgenda` (costanti `AG_*`), overlay `#agendaOverlay`, aperta dal box "timbrature ↗".
+
+### Note e orari originali
+- Textarea `#mNote` nella modale di timbratura (sotto Annulla/Salva), salvata in `entry.note`. Nel tab Bambini le note compaiono sotto le timbrature (`.log-note-row`); toccandole si apre la timbratura.
+- `saveModal` salva `rawIn`/`rawOut` (orari non arrotondati) accanto a `timeIn`/`timeOut` (arrotondati). Portale, export e statistiche usano SOLO gli arrotondati; agenda e riapertura del form usano `rawIn||timeIn`.
+
+### Agenda
+- Layout a fasce da 1h (non lineare). Finestra default 07:00–18:00, estesa se servono eventi o ora corrente.
+- Eventi di un'ora impilati (riga 24px, 40px con nota). Ingressi in nero, uscite verde scuro `#14532d`.
+- **Sfondo per fascia oraria**: `rgba(0,0,0, min(n,3)*0.07)`, con `n` = massimo di bambini contemporaneamente presenti nell'ora. Zero bambini = bianco; 1–3 = grigio via via più scuro; oltre 3 resta al livello di 3. Un bambino con ingresso senza uscita conta come presente. (Valori più bassi, es. 0.04, sono quasi invisibili.)
+- Ore vuote consecutive con stesso grigio (senza ora corrente) = una riga "··· N ore senza eventi ···"; mattina/pomeriggio senza bambini = blocco "Nessun bambino".
+- Riga rossa dell'ora corrente (solo se la data è oggi), arrotondata ai 5', inserita in ordine cronologico; all'apertura lo scroll la centra.
+- Un timer ogni 15s ridisegna e ricentra solo se ≥3' dall'ultimo update e ≥1' senza interazione; si ferma alla chiusura.
+- Tocco su un evento → `openModal(rc, idx)` (la modale ha z-index 210, sopra l'agenda); dopo il salvataggio `refreshAgendaIfOpen()` ridisegna mantenendo lo scroll.
+
 ## Impostazioni app
 
 Salvate in `localStorage` chiave `afds_settings`:
